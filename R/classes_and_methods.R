@@ -392,7 +392,7 @@ run_asp <- function(asp, tool, run = T, read_results = T, parallel = T, block = 
   for (t in tool) {
     cmds <- asp@cmds[[t]]
     if (run) {
-      future::plan("future::multisession")
+      future::plan(multisession)
       message(glue::glue("{t} is running"))
       myCreatedir(glue::glue("{asp@dir_out}/{getOption('asp_tools')[t]}/{mydirs[[t]]}"))
     }
