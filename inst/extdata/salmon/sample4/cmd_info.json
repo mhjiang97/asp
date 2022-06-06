@@ -1,0 +1,16 @@
+{
+    "salmon_version": "1.4.0",
+    "libType": "A",
+    "threads": "10",
+    "index": "/public/home/rp1011mgy/rp1011menggy/doc/reference/salmon_1.4.0_pa/index",
+    "geneMap": "/public/home/rp1011mgy/rp1011menggy/doc/reference/gtf/gencode.v32.annotation.primary_assembly.protein_coding2.gtf",
+    "mates1": "/public/home/rp1011mgy/rp1011menggy/projects/pkgs/R/asp/inst/extdata//sample4_R1.fq.gz",
+    "mates2": "/public/home/rp1011mgy/rp1011menggy/projects/pkgs/R/asp/inst/extdata//sample4_R2.fq.gz",
+    "output": ".//salmon/sample4/",
+    "validateMappings": [],
+    "gcBias": [],
+    "seqBias": [],
+    "dumpEq": [],
+    "numBootstraps": "100",
+    "auxDir": "aux_info"
+}

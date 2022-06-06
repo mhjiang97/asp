@@ -1,0 +1,22 @@
+{
+    "read_files": "[ /public/home/rp1011mgy/rp1011menggy/projects/pkgs/R/asp/inst/extdata//sample7_R1.fq.gz, /public/home/rp1011mgy/rp1011menggy/projects/pkgs/R/asp/inst/extdata//sample7_R2.fq.gz]",
+    "expected_format": "IU",
+    "compatible_fragment_ratio": 1.0,
+    "num_compatible_fragments": 21647,
+    "num_assigned_fragments": 21647,
+    "num_frags_with_concordant_consistent_mappings": 21620,
+    "num_frags_with_inconsistent_or_orphan_mappings": 28,
+    "strand_mapping_bias": 0.49722479185938947,
+    "MSF": 0,
+    "OSF": 0,
+    "ISF": 10750,
+    "MSR": 0,
+    "OSR": 0,
+    "ISR": 10870,
+    "SF": 12,
+    "SR": 16,
+    "MU": 0,
+    "OU": 0,
+    "IU": 0,
+    "U": 0
+}
