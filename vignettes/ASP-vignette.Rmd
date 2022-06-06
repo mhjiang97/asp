@@ -1,0 +1,136 @@
+---
+title: "ASP-vignette"
+author: "Minghao Jiang"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ASP-vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(asp)
+library(glue)
+library(org.Hs.eg.db)
+```
+
+```{r}
+bams_s1 <- system.file("extdata", glue("star/sample{1:4}/sample{1:4}.SortedByCoord.bam"), package = "asp")
+bams_s2 <- system.file("extdata", glue("star/sample{5:8}/sample{5:8}.SortedByCoord.bam"), package = "asp")
+salmons_s1 <- system.file("extdata", glue("salmon/sample{1:4}/"), package = "asp")
+salmons_s2 <- system.file("extdata", glue("salmon/sample{5:8}/"), package = "asp")
+fqs_s1 <- paste(
+  system.file("extdata", glue("fq/sample{1:4}_R1.fq.gz"), package = "asp"),
+  system.file("extdata", glue("fq/sample{1:4}_R2.fq.gz"), package = "asp"),
+  sep = ";"
+)
+fqs_s2 <- paste(
+  system.file("extdata", glue("fq/sample{5:8}_R1.fq.gz"), package = "asp"),
+  system.file("extdata", glue("fq/sample{5:8}_R2.fq.gz"), package = "asp"),
+  sep = ";"
+)
+sampleTable <- data.frame(
+  samples = glue("sample{1:8}"),
+  conditions = rep(c("s1", "s2"), each = 4),
+  files_bam = c(bams_s1, bams_s2),
+  files_fq = c(fqs_s1, fqs_s2),
+  dirs_salmon = c(salmons_s1, salmons_s2),
+  read_lengths = rep(101, 8),
+  library_types = rep("paired-end", 8),
+  strandedness = rep("no", 8)
+)
+```
+
+```{r}
+data("tx2gene")
+asp <- createASP(
+  sampletable = sampleTable,
+  tx2gene = tx2gene,
+  gtf = "~/doc/reference/gtf/gencode.v32.annotation.gtf",
+  gff = "~/doc/reference/gtf/gff/gencode.v32.annotation.gff3",
+  fa = "~/doc/reference/fa/GRCh38.p13.genome.fa",
+  fa_transcript = "~/doc/reference/fa/gencode.v32.transcripts.fa",
+  genome_version = "hg38",
+  dir_out = "~/projects/test/",
+  nproc = 20,
+  novel = F,
+  write_log = T,
+  parallel = T,
+  np = 5,
+  conda_path = "~/bin/anaconda3/"
+)
+```
+
+```{r}
+asp <- cmd_asp(
+  asp = asp, conda_env = "rmats", tool = "rmats",
+  variable_read_length = T, paired_stats = F, cstat = 0.01, allow_clipping = T
+)
+asp <- cmd_asp(
+  asp = asp, conda_env = c(NA, "assw_3.8"), tool = c("cash", "leafcutter"),
+  cash_jar = "~/bin/cash.jar", MergePval = "G", ram = "100g",
+  leafcutter_dir = "~/bin/leafcutter/"
+)
+```
+
+```{r, eval = FALSE, echo = FALSE, results = 'hide'}
+asp <- run_asp(asp = asp, tool = "rmats", run = T, read_results = T, parallel = F)
+asp <- run_asp(asp = asp, tool = c("cash", "leafcutter"), read_results = T, parallel = T)
+```
+
+```{r}
+asp <- createASP(
+  sampletable = sampleTable,
+  tx2gene = tx2gene,
+  gtf = "~/doc/reference/gtf/gencode.v32.annotation.gtf",
+  gff = "~/doc/reference/gtf/gff/gencode.v32.annotation.gff3",
+  fa = "~/doc/reference/fa/GRCh38.p13.genome.fa",
+  fa_transcript = "~/doc/reference/fa/gencode.v32.transcripts.fa",
+  genome_version = "hg38",
+  dir_out = system.file("extdata", glue("results/"), package = "asp"),
+  nproc = 5,
+  novel = F,
+  write_log = T,
+  parallel = T,
+  np = 2,
+  conda_path = "~/opt/miniconda3/"
+)
+asp <- run_asp(
+  asp, tool = c("rmats", "cash", "leafcutter", "majiq", "bandits", "psichomics", "suppa", "spladder"),
+  run = F, read_results = T, parallel = F
+)
+```
+
+```{r}
+asp <- sig_asp(
+  asp, tool = c("rmats", "cash", "leafcutter", "suppa", "psichomics"),
+  p_adj = 0.05, delta_psi = 0.05
+)
+asp <- sig_asp(
+  asp, tool = "majiq", p_value = 0.05, delta_psi = 0.05
+)
+asp <- sig_asp(
+  asp, tool = "spladder", p_adj = 0.05, effect_size_col = "log2FC_event_count", effect_size_threshod = 1
+)
+asp <- sig_asp(
+  asp, tool = "bandits", p_adj = 0.05, effect_size_col = "DTU_measure", effect_size_threshod = 0.1
+)
+asp <- intersect_asp(asp)
+
+print(asp@intersection$all)
+```
+
+```{r}
+asp <- plot_pre_asp(asp, org.Hs.eg.db)
+asp <- plot_asp(asp, tool = "rmats", plot_samples = 2)
+asp <- plot_asp(asp, tool = "leafcutter", plot_samples = c("sample1", "sample2", "sample5", "sample6"))
+```
+

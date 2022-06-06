@@ -1,0 +1,42 @@
+Type: Package
+Package: asp
+Title: Perform Differential Alternative Splicing Easily
+Version: 0.0.0.9000
+Authors@R: 
+    person("Minghao", "Jiang", , "jiangminghao1001@163.com", role = c("aut", "cre"))
+Author: Minghao Jiang [aut, cre, cph]
+Maintainer: Minghao Jiang <jiangminghao1001@163.com>
+Description: Differential Alternative Splicing Wrap Incorporating muliple
+    benchmarked tools
+License: GPL-3.0
+Depends: 
+    R (>= 4.1)
+Imports: 
+    dplyr,
+    future,
+    GenomicFeatures,
+    GenomicRanges,
+    ggimage,
+    ggplot2,
+    ggplotify,
+    ggsci,
+    glue,
+    IRanges,
+    purrr,
+    rtracklayer,
+    stringr,
+    tibble,
+    tidyr,
+    trackViewer,
+    tximport,
+    UpSetR,
+    vroom
+Remotes: 
+    GuangchuangYu/yyplot
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.0
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
