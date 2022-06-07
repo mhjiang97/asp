@@ -1,4 +1,4 @@
-AccID	Location	Exon	s1_Junc_Inclusive..Exclusive	s2_Junc_Inclusive..Exclusive	s1_Exp_Inclusive..Exclusive	s2_Exp_Inclusive..Exclusive	delta_PSI	P.Value	FDR	SplicingType
+AccID	Location	Exon	s1_Junc_Inclusive::Exclusive	s2_Junc_Inclusive::Exclusive	s1_Exp_Inclusive::Exclusive	s2_Exp_Inclusive::Exclusive	delta_PSI	P-Value	FDR	SplicingType
 HAT1	chr2:171925537-171953001	4	945::44	111::435	512::496	62::503	0.752213913487928	0	0	Cassette
 RPL35A	chr3:197951159-197951328	4	1540::13550	9677::3215	2422::15341	9816::11816	-0.648566199246758	0	0	A5SS
 NASP	chr1:45591223-45602365	6	225::740	1329::267	110::606	674::674	-0.599546145155635	2.45176568313688e-17	2.21149264618946e-14	Cassette

@@ -1,4 +1,4 @@
-Gene_id	p.values	adj.p.values	p.values_inverted	adj.p.values_inverted	DTU_measure	Mean.log.prec.s1	Mean.log.prec.s2	SD.log.prec.s1	SD.log.prec.s2
+Gene_id	p.values	adj.p.values	p.values_inverted	adj.p.values_inverted	DTU_measure	Mean log-prec s1	Mean log-prec s2	SD log-prec s1	SD log-prec s2
 ENSG00000273136.7	0	0	0	0	0.847229112253897	7.34495570524922	6.82840480048482	1.60291671816491	1.32152194454053
 ENSG00000197563.11	0	0	0	0	1.14260404342232	6.2874625010992	6.1733811849209	0.283642682304517	0.396096903340828
 ENSG00000132780.17	0	0	0	0	0.89885327492756	5.21319368062788	4.40281934141992	0.314326194103915	0.288718996245268
