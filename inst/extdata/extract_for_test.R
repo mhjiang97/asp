@@ -59,11 +59,17 @@ write.table(
 
 ##### MAJIQ #####
 dat <- read.delim("MAJIQ/voila/s1_s2_0.2.tsv", comment.char = "#")
+dat2 <- read.delim("MAJIQ/deltapsi/s1_s2.deltapsi.tsv")
 
 dat_keep <- dat[dat$gene_name %in% genes_keep, ]
+dat2_keep <- dat2[dat2$Gene.ID %in% genes_id_keep, ]
 
 write.table(
   dat_keep, "MAJIQ/voila/s1_s2_0.2_keep.tsv",
+  sep = "\t", quote = F, row.names = F
+)
+write.table(
+  dat2_keep, "MAJIQ/deltapsi/s1_s2.deltapsi_keep.tsv",
   sep = "\t", quote = F, row.names = F
 )
 
