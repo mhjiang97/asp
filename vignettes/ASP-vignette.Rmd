@@ -83,7 +83,7 @@ asp <- cmd_asp(
 
 ```{r, eval = FALSE, echo = FALSE, results = 'hide'}
 asp <- run_asp(asp = asp, tool = "rmats", run = T, read_results = T, parallel = F)
-asp <- run_asp(asp = asp, tool = c("cash", "leafcutter"), read_results = T, parallel = T)
+asp <- run_asp(asp = asp, tool = c("cash", "leafcutter"), read_results = T, parallel = T, block = T)
 ```
 
 ```{r}

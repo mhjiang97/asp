@@ -352,6 +352,8 @@ cmd_asp <- function(
 #' @export
 #' @return An \code{\linkS4class{ASP}} object with results saved in results slot.
 run_asp <- function(asp, tool, run = T, read_results = T, parallel = T, block = T) {
+  if (run && length(tool) > 1) future::plan(multisession)
+
   if (run == F && read_results == T && parallel == T) {
     stop("please set parallel to FALSE when reading in results only!")
   }
@@ -362,6 +364,11 @@ run_asp <- function(asp, tool, run = T, read_results = T, parallel = T, block = 
     )
     read_results <- F
   }
+  if (length(tool) <= 1) {
+    message("the number of tools you want to run is 1, and reset parallel to FALSE")
+    parallel <- F
+  }
+
   myreadin <- c(
     "rmats" = read_rmats,
     "cash" = read_cash,
@@ -384,18 +391,11 @@ run_asp <- function(asp, tool, run = T, read_results = T, parallel = T, block = 
   )
 
   f <- vector("list", length = length(tool)) |> setNames(tool)
-  # if (length(tool) <= 1) {
-  #   message("the number of tools you want to run is 1, and reset parallel to FALSE")
-  #   parallel <- F
-  # }
 
   for (t in tool) {
     cmds <- asp@cmds[[t]]
-    if (run) {
-      future::plan(multisession)
-      message(glue::glue("{t} is running"))
-      myCreatedir(glue::glue("{asp@dir_out}/{getOption('asp_tools')[t]}/{mydirs[[t]]}"))
-    }
+    message(glue::glue("{t} is running"))
+    if (run) myCreatedir(glue::glue("{asp@dir_out}/{getOption('asp_tools')[t]}/{mydirs[[t]]}"))
 
     if (parallel) {
       cmd_in_R <- glue::glue("env_[t] %<-% {run_cmds(cmds, run)}", .open = "[", .close = "]")
