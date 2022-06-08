@@ -1,4 +1,6 @@
 # ASP: Alternative Splicing Package  
+  
+## _an R package for performing differential alternative splicing expediently_  
 -----------  
 ## Author  
 Minghao Jiang, <jiangminghao1001@163.com>  
