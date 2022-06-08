@@ -4,27 +4,13 @@
 \alias{intersect_asp}
 \title{Intersect the results}
 \usage{
-intersect_asp(
-  asp,
-  tools = "all",
-  type = "all",
-  dir_plot = NULL,
-  width = 10,
-  height = 7
-)
+intersect_asp(asp, tools = "all", type = "all")
 }
 \arguments{
 \item{asp}{An \code{\linkS4class{ASP}} object.}
 
 \item{type}{One of "SE", "MXE", "A3SS", "A5SS", "RI", "SME", "ALE" and "AFE".
 Or use "all" to retrieve the intersections of all AS types.}
-
-\item{dir_plot}{If it's NULL, pdf files will be deposited under the
-\emph{dir_out} folder stored in \code{\linkS4class{ASP}}.}
-
-\item{width}{pdf width.}
-
-\item{height}{pdf height.}
 
 \item{tool}{Any combination of "rmats", "cash", "leafcutter", "majiq",
 "suppa", "bandits", "psichomics", and "spladder".
@@ -37,5 +23,11 @@ An \code{\linkS4class{ASP}} object with intersection tibble
 }
 \description{
 This function is to retrieve intersections of significant
-    results of different workflows and to visualize it.
+    results of different workflows.
+}
+\examples{
+\dontrun{
+asp <- intersect_asp(asp)
+print(asp@intersection$all)
+}
 }

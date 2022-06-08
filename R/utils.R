@@ -1,38 +1,38 @@
 #' @importFrom glue glue
 run_cmds <- function(cmds, run = T) {
-  message("all commands to run:")
+  message("All commands to run:")
   for (name_cmd in names(cmds)) {
     message(glue::glue("{name_cmd}: {cmds[name_cmd]}"))
   }
   for (name_cmd in names(cmds)) {
     cmds_now <- cmds[[name_cmd]]
     for (cn in cmds_now) {
-      message(glue::glue("command running is: {cn}"))
+      message(glue::glue("The running command is: {cn}."))
       if (run) {
         fail <- system(cn, wait = T)
         if (fail) {
-          write(glue::glue("error: step {name_cmd} failed"), stderr())
+          write(glue::glue("Error: step {name_cmd} failed."), stderr())
           return(fail)
-        } else {message("finished")}
+        } else {message("Finished.")}
       }
     }
-    message(glue::glue("step {name_cmd} finished successfully"))
+    message(glue::glue("Step {name_cmd} finished successfully."))
   }
   return(0)
 }
 
 #' @importFrom glue glue
 myCreatedir <- function(dirs) {
-  message("creating directories")
+  message("Creating directories")
   for(d in dirs) {
     message(d)
     if (!dir.exists(d)) {
       dir.create(d, recursive = T)
     } else {
-      message(glue::glue("{d} exits already"))
+      message(glue::glue("{d} exits already."))
     }
   }
-  message("creating directories done")
+  message("Creating directories was done.")
 }
 
 myParallel <- function(cmd) {
@@ -77,23 +77,28 @@ getBasics <- function(sampletable) {
     salmons_1 <- salmons_2 <- NULL
   }
 
-  fqs_R1_1 <- sampletable$files_fq[sampletable$conditions == condition_1] |>
-    strsplit(";") |>
-    sapply(function(x) {return(x[1])}) |>
-    setNames(samples_1)
-  fqs_R2_1 <- sampletable$files_fq[sampletable$conditions == condition_1] |>
-    strsplit(";") |>
-    sapply(function(x) {return(x[2])}) |>
-    setNames(samples_1)
+  if ("files_fq" %in% colnames(sampletable)) {
+    fqs_R1_1 <- sampletable$files_fq[sampletable$conditions == condition_1] |>
+      strsplit(";") |>
+      sapply(function(x) {return(x[1])}) |>
+      setNames(samples_1)
+    fqs_R2_1 <- sampletable$files_fq[sampletable$conditions == condition_1] |>
+      strsplit(";") |>
+      sapply(function(x) {return(x[2])}) |>
+      setNames(samples_1)
 
-  fqs_R1_2 <- sampletable$files_fq[sampletable$conditions == condition_2] |>
-    strsplit(";") |>
-    sapply(function(x) {return(x[1])}) |>
-    setNames(samples_2)
-  fqs_R2_2 <- sampletable$files_fq[sampletable$conditions == condition_2] |>
-    strsplit(";") |>
-    sapply(function(x) {return(x[2])}) |>
-    setNames(samples_2)
+    fqs_R1_2 <- sampletable$files_fq[sampletable$conditions == condition_2] |>
+      strsplit(";") |>
+      sapply(function(x) {return(x[1])}) |>
+      setNames(samples_2)
+    fqs_R2_2 <- sampletable$files_fq[sampletable$conditions == condition_2] |>
+      strsplit(";") |>
+      sapply(function(x) {return(x[2])}) |>
+      setNames(samples_2)
+  } else {
+    fqs_R1_1 <- fqs_R2_1 <- fqs_R1_2 <- fqs_R2_2 <- NULL
+  }
+
 
   files_star_junc <- vector("character", length = nrow(sampletable)) |>
     setNames(sampletable$samples)

@@ -16,11 +16,25 @@ knitr::opts_chunk$set(
 )
 ```
 
+# Packages setup
+
+*Packages messages are suppressed when starting up.*
+
 ```{r setup}
-library(asp)
-library(glue)
-library(org.Hs.eg.db)
+pkgs <- c("asp", "glue", "org.Hs.eg.db")
+for (pkg in pkgs) suppressPackageStartupMessages(library(pkg, character.only = T))
 ```
+
+# Sample files acquisition
+
+A *tx2gene* for each transcript are provided (GENCODE version32).
+
+```{r, results = 'asis'}
+data("tx2gene")
+pander::pandoc.table(tx2gene[1:10, ])
+```
+
+The raw sample *bam* files, *salmon* results, and *fastq* files are also provided.
 
 ```{r}
 bams_s1 <- system.file("extdata", glue("star/sample{1:4}/sample{1:4}.SortedByCoord.bam"), package = "asp")
@@ -47,33 +61,39 @@ sampleTable <- data.frame(
   library_types = rep("paired-end", 8),
   strandedness = rep("no", 8)
 )
+print(sampleTable)
 ```
 
+# ASP object creation
+
+The *tx2gene* flag can be overlooked, and the *gtf* will be used to generate a *tx2gene* dataframe.
+
 ```{r}
-data("tx2gene")
-asp <- createASP(
+asp <- create_asp(
   sampletable = sampleTable,
   tx2gene = tx2gene,
   gtf = "~/doc/reference/gtf/gencode.v32.annotation.gtf",
   gff = "~/doc/reference/gtf/gff/gencode.v32.annotation.gff3",
   fa = "~/doc/reference/fa/GRCh38.p13.genome.fa",
-  fa_transcript = "~/doc/reference/fa/gencode.v32.transcripts.fa",
-  genome_version = "hg38",
   dir_out = "~/projects/test/",
-  nproc = 20,
-  novel = F,
-  write_log = T,
-  parallel = T,
-  np = 5,
   conda_path = "~/bin/anaconda3/"
 )
 ```
+
+# Commands generation
+
+You can generate a workflow in **ASP** easily.
 
 ```{r}
 asp <- cmd_asp(
   asp = asp, conda_env = "rmats", tool = "rmats",
   variable_read_length = T, paired_stats = F, cstat = 0.01, allow_clipping = T
 )
+```
+
+Multiple workflows can be generated together.
+
+```{r}
 asp <- cmd_asp(
   asp = asp, conda_env = c(NA, "assw_3.8"), tool = c("cash", "leafcutter"),
   cash_jar = "~/bin/cash.jar", MergePval = "G", ram = "100g",
@@ -81,20 +101,31 @@ asp <- cmd_asp(
 )
 ```
 
-```{r, eval = FALSE, echo = FALSE, results = 'hide'}
-asp <- run_asp(asp = asp, tool = "rmats", run = T, read_results = T, parallel = F)
-asp <- run_asp(asp = asp, tool = c("cash", "leafcutter"), read_results = T, parallel = T, block = T)
-```
+# Workflows running
+
+You can set *run* to **FALSE** to check workflows first.
 
 ```{r}
-asp <- createASP(
+asp <- run_asp(asp = asp, tool = "rmats", run = F, read_results = F, parallel = F)
+```
+
+Multiple workflows can be performed at the same time using multi sessions.
+
+```{r}
+asp <- run_asp(asp = asp, tool = c("cash", "leafcutter"), run = F, read_results = F, parallel = T, block = T)
+```
+
+# Results reading
+
+To save the time, we provide the final results outputted by the eight workflows.
+
+```{r}
+asp <- create_asp(
   sampletable = sampleTable,
   tx2gene = tx2gene,
   gtf = "~/doc/reference/gtf/gencode.v32.annotation.gtf",
   gff = "~/doc/reference/gtf/gff/gencode.v32.annotation.gff3",
   fa = "~/doc/reference/fa/GRCh38.p13.genome.fa",
-  fa_transcript = "~/doc/reference/fa/gencode.v32.transcripts.fa",
-  genome_version = "hg38",
   dir_out = system.file("extdata", glue("results/"), package = "asp"),
   nproc = 5,
   novel = F,
@@ -108,6 +139,10 @@ asp <- run_asp(
   run = F, read_results = T, parallel = F
 )
 ```
+
+# Significant differential alternative splicing query
+
+The significant events will be saved in **ASP** through *sig_asp*.
 
 ```{r}
 asp <- sig_asp(
@@ -123,14 +158,37 @@ asp <- sig_asp(
 asp <- sig_asp(
   asp, tool = "bandits", p_adj = 0.05, effect_size_col = "DTU_measure", effect_size_threshod = 0.1
 )
-asp <- intersect_asp(asp)
-
-print(asp@intersection$all)
 ```
+
+# Significant differential alternative splicing genes intersection and visualization
+
+Intersect the significant differential AS genes expediently.
+
+```{r paged.print = TRUE, results = 'asis'}
+asp <- intersect_asp(asp)
+pander::pandoc.table(asp@intersection$all[1:5, ])
+```
+A venn plot and a upset plot can be used to visualize the intersection.
+
+```{r fig.height = 6, fig.width = 7}
+venn_upset_asp(asp)
+```
+
+# Significant differential alternative splicing events visualization
+
+The figures of tracks can be used to check the differences in your data.
+
+```{r fig.height = 6, fig.width = 7}
+asp <- plot_pre_asp(
+  asp, tool = c("rmats", "cash"), top = 1, samples = 2, txdb = NULL, annotation_db = org.Hs.eg.db
+)
+plot_asp(asp, tool = "rmats", i = 1)
+```
+
+---
+
+# Session Information
 
 ```{r}
-asp <- plot_pre_asp(asp, org.Hs.eg.db)
-asp <- plot_asp(asp, tool = "rmats", plot_samples = 2)
-asp <- plot_asp(asp, tool = "leafcutter", plot_samples = c("sample1", "sample2", "sample5", "sample6"))
+sessionInfo()
 ```
-

@@ -14,8 +14,6 @@ cmd_asp(
   gtf = NULL,
   gff = NULL,
   fa = NULL,
-  fa_transcript = NULL,
-  genome_version = NULL,
   parallel = NULL,
   np = NULL,
   basics = NULL,
@@ -35,9 +33,9 @@ Different tools can rely on different envs.}
 \item{tool}{Any combination of "rmats", "cash", "leafcutter", "majiq",
 "suppa", "bandits", "psichomics", and "spladder".}
 
-\item{tx2gene, dir_out, nproc, gtf, gff, fa, fa_transcript, genome_version}{These are same
-as the flags in \code{\linkS4class{ASP}}, if you want to change any of
-them, then provide a new one.}
+\item{tx2gene, dir_out, nproc, gtf, gff, fa}{These are same as the flags in
+\code{\linkS4class{ASP}}, if you want to change any of them, then
+provide a new one.}
 
 \item{parallel, np, basics, sampletable, novel, conda_path, write_log}{These are same
 as the flags in \code{\linkS4class{ASP}}, if you want to change any of
@@ -55,4 +53,18 @@ An \code{\linkS4class{ASP}} object with commands of each workflows
 \description{
 This function is about to generate desire commands to run or to
     check.
+}
+\examples{
+\dontrun{
+asp <- cmd_asp(
+  asp = asp, conda_env = "rmats", tool = "rmats",
+  variable_read_length = T, paired_stats = F, cstat = 0.01, allow_clipping = T
+)
+
+asp <- cmd_asp(
+  asp = asp, conda_env = c(NA, "assw_3.8"), tool = c("cash", "leafcutter"),
+  cash_jar = "~/bin/cash.jar", MergePval = "G", ram = "100g",
+  leafcutter_dir = "~/bin/leafcutter/"
+)
+}
 }

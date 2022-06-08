@@ -79,62 +79,32 @@ ranges_lines <- function(dat, tool, extend_left = 1000, extend_right = 1000) {
   list(ranges = ranges, lines = coordses, genes = genes, ids = ids)
 }
 
-#' @import  trackViewer
+#' @import trackViewer
 plot_tracks <- function(
-  dir_plot, plot_basics, ranges_lines, txdb, annotation_db, ...
+  list_bams, ranges_lines, basics_plot, txdb, annotation_db, i
 ) {
-  myCreatedir(dir_plot)
-  ranges <- ranges_lines$ranges
-  lines <- ranges_lines$lines
-  genes <- ranges_lines$genes
-  ids <- ranges_lines$ids
-
-  bams_1 <- plot_basics$bams_1
-  bams_2 <- plot_basics$bams_2
-  # lt_1 <- plot_basics$library_types_1
-  # lt_2 <- plot_basics$library_types_2
-
-  list_bams <- vector("list", length = length(c(bams_1, bams_2))) |>
-    setNames(names(c(bams_1, bams_2)))
-  for (s in names(list_bams)) {
-    list_bams[[s]] <- trackViewer::importBam(
-      c(bams_1, bams_2)[s], ranges = ranges
-    ) # , pairs = c(lt_1, lt_2)[s]
+  ranges <- ranges_lines$ranges[i]
+  lines <- ranges_lines$lines[[i]]
+  bams_1 <- basics_plot$bams_1
+  bams_2 <- basics_plot$bams_2
+  message(glue("ploting GENE: {ranges_lines$genes[i]}, ID: {ranges_lines$ids[i]}"))
+  trs <- trackViewer::geneModelFromTxdb(txdb, annotation_db, gr = ranges)
+  optSty <- trackViewer::optimizeStyle(trackViewer::trackList(list_bams, trs))
+  trackList <- optSty$tracks
+  viewerStyle <- optSty$style
+  trackViewer::setTrackViewerStyleParam(viewerStyle, "xaxis", T)
+  trackViewer::setTrackViewerStyleParam(viewerStyle, "margin", c(0.15, 0.15, 0.05, 0.05))
+  for (b in names(bams_1)) {
+    trackViewer::setTrackStyleParam(trackList[[b]], "color", c("red", "black"))
+    trackViewer::setTrackYaxisParam(trackList[[b]], "main", F)
+  }
+  for (b in names(bams_2)) {
+    trackViewer::setTrackStyleParam(trackList[[b]], "color", c("blue", "black"))
+    trackViewer::setTrackYaxisParam(trackList[[b]], "main", F)
   }
 
-  for (i in 1:length(ranges)) {
-    message(glue("ploting {i} out of {length(ranges)}"))
-    trs <- trackViewer::geneModelFromTxdb(txdb, db, gr = ranges[i])
-    optSty <- trackViewer::optimizeStyle(trackViewer::trackList(list_bams, trs))
-    trackList <- optSty$tracks
-    viewerStyle <- optSty$style
-    trackViewer::setTrackViewerStyleParam(viewerStyle, "xaxis", T)
-    trackViewer::setTrackViewerStyleParam(
-      viewerStyle, "margin", c(0.15, 0.15, 0.05, 0.05)
-    )
-    for (b in names(bams_1)) {
-      trackViewer::setTrackStyleParam(
-        trackList[[b]], "color", c("red", "black")
-      )
-      trackViewer::setTrackYaxisParam(trackList[[b]], "main", F)
-    }
-    for (b in names(bams_2)) {
-      trackViewer::setTrackStyleParam(
-        trackList[[b]], "color", c("blue", "black")
-      )
-      trackViewer::setTrackYaxisParam(trackList[[b]], "main", F)
-    }
-    pdf(
-      glue::glue("{dir_plot}/{i}_{genes[i]}_{ids[i]}.pdf"),
-      width = 10, height = 9
-    )
-    vp <- trackViewer::viewTracks(
-      trackList, gr = ranges[i], viewerStyle = viewerStyle,
-      autoOptimizeStyle = T
-    )
-    trackViewer::addGuideLine(lines[[i]], vp = vp)
-    dev.off()
-  }
+  vp <- trackViewer::viewTracks(trackList, gr = ranges, viewerStyle = viewerStyle, autoOptimizeStyle = T)
+  trackViewer::addGuideLine(lines, vp = vp)
 }
 
 getPlotBasics <- function(asp, plot_samples, ...) {

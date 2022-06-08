@@ -41,7 +41,7 @@ myVroom <- function(file, na_append = NULL, delim = "\t", comment = "", col_name
   myna <- c(na_origin, na_append)
 
   n_col <- read.table(
-    file, header = T, sep = "\t", na.strings = c("NA", na_append), nrows = 10
+    file, header = T, sep = "\t", fill = T, na.strings = c("NA", na_append), nrows = 10
   ) |>
     ncol()
 

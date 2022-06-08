@@ -4,19 +4,56 @@
 \alias{plot_pre_asp}
 \title{Prepare for plotting tracks of significant differential AS genes}
 \usage{
-plot_pre_asp(asp, gtf = NULL, annotation_db = NULL)
+plot_pre_asp(
+  asp,
+  tool,
+  dat = NULL,
+  top = 10,
+  samples = NULL,
+  txdb = NULL,
+  annotation_db = NULL,
+  ...
+)
 }
 \arguments{
 \item{asp}{An \code{\linkS4class{ASP}} object.}
 
-\item{gtf}{If it's NULL, the gtf stored in \code{\linkS4class{ASP}} will be
+\item{tool}{Any combination of "rmats", "cash", "leafcutter", "majiq",
+"suppa", "psichomics", and "spladder".}
+
+\item{dat}{List. If it's NULL, plot \code{top}.}
+
+\item{top}{Default is 10.}
+
+\item{samples}{Can be a integer (sampling in each condition)
+or a character vector (sample names).}
+
+\item{txdb}{TxDb. If NULL, the gtf stored in \code{\linkS4class{ASP}} will be
 used.}
 
-\item{annotation_db}{OrgDb.}
+\item{annotation_db}{OrgDb. Bioconductor annotation data package.}
+
+\item{...}{Accept two additional flags: \strong{extend_left} and
+\strong{extend_right}, mean how many based should be extended around the
+AS events.}
 }
 \value{
 An \code{\linkS4class{ASP}} object.
 }
 \description{
 This function is to load a txdb and an annotation database.
+}
+\examples{
+\dontrun{
+asp <- plot_pre_asp(
+  asp, tool = c("rmats", "cash"), top = 2,
+  samples = c("sample1", "sample2", "sample8"),
+  annotation_db = org.Hs.eg.db
+)
+
+asp <- plot_pre_asp(
+  asp, tool = "leafcutter", top = 2,
+  samples = 2, txdb = NULL, annotation_db = org.Hs.eg.db
+)
+}
 }

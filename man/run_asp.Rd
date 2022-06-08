@@ -30,3 +30,14 @@ An \code{\linkS4class{ASP}} object with results saved in results slot.
 \description{
 This function is about to run each workflow and read in results.
 }
+\examples{
+\dontrun{
+asp <- run_asp(
+  asp = asp, tool = "rmats", run = T, read_results = T, parallel = F
+)
+asp <- run_asp(
+  asp = asp, tool = c("cash", "leafcutter"),
+  read_results = T, parallel = T, block = T
+)
+}
+}

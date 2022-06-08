@@ -49,3 +49,11 @@ An \code{\linkS4class{ASP}} object with significant results saved
 \description{
 This function is about to extract the significant results.
 }
+\examples{
+\dontrun{
+asp <- sig_asp(
+  asp, tool = c("rmats", "cash", "leafcutter"),
+  p_adj = 0.05, delta_psi = 0.05
+)
+}
+}

@@ -4,40 +4,26 @@
 \alias{plot_asp}
 \title{Plot tracks of bam files to visualise significant differential AS genes}
 \usage{
-plot_asp(
-  asp,
-  tool,
-  plot_samples = NULL,
-  dat = NULL,
-  dir_plot = NULL,
-  top_n = 10,
-  ...
-)
+plot_asp(asp, tool, i = 1)
 }
 \arguments{
 \item{asp}{An \code{\linkS4class{ASP}} object.}
 
-\item{tool}{Any combination of "rmats", "cash", "leafcutter", "majiq",
-"suppa", "bandits", "psichomics", and "spladder".}
+\item{tool}{One of "rmats", "cash", "leafcutter", "majiq",
+"suppa", "psichomics", or "spladder".}
 
-\item{plot_samples}{Can be a integer (sampling in each condition)
-or a character vector (sample names).}
-
-\item{dat}{If it's NULL, plot \code{top_n}.}
-
-\item{dir_plot}{If it's NULL, pdf files will be deposited under the subfolder
-\emph{track} of \emph{dir_out} stored in \code{\linkS4class{ASP}}.}
-
-\item{top_n}{Default is 10.}
-
-\item{...}{Accept two additional flags: \strong{extend_left} and
-\strong{extend_right}, mean how many based should be extended around the
-AS events.}
+\item{i}{Default is 1. The order of the significant differential events
+prepared through \code{\link{plot_pre_asp}} you want to plot.}
 }
 \value{
-An invisible \code{\linkS4class{ASP}} object.
+NULL.
 }
 \description{
 This function is to plot tracks
     using \code{\link[trackViewer]{trackViewer-package}}.
+}
+\examples{
+\dontrun{
+plot_asp(asp, tool = "cash", i = 1)
+}
 }
