@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Packages setup
+## Packages setup
 
 *Packages messages are suppressed when starting up.*
 
@@ -25,7 +25,7 @@ pkgs <- c("asp", "glue", "org.Hs.eg.db")
 for (pkg in pkgs) suppressPackageStartupMessages(library(pkg, character.only = T))
 ```
 
-# Sample files acquisition
+## Sample files acquisition
 
 A *tx2gene* for each transcript are provided (GENCODE version32).
 
@@ -64,7 +64,7 @@ sampleTable <- data.frame(
 print(sampleTable)
 ```
 
-# ASP object creation
+## ASP object creation
 
 The *tx2gene* flag can be overlooked, and the *gtf* will be used to generate a *tx2gene* dataframe.
 
@@ -80,7 +80,7 @@ asp <- create_asp(
 )
 ```
 
-# Commands generation
+## Commands generation
 
 You can generate a workflow in **ASP** easily.
 
@@ -101,7 +101,7 @@ asp <- cmd_asp(
 )
 ```
 
-# Workflows running
+## Workflows running
 
 You can set *run* to **FALSE** to check workflows first.
 
@@ -115,7 +115,7 @@ Multiple workflows can be performed at the same time using multi sessions.
 asp <- run_asp(asp = asp, tool = c("cash", "leafcutter"), run = F, read_results = F, parallel = T, block = T)
 ```
 
-# Results reading
+## Results reading
 
 To save the time, we provide the final results outputted by the eight workflows.
 
@@ -140,7 +140,7 @@ asp <- run_asp(
 )
 ```
 
-# Significant differential alternative splicing query
+## Significant differential alternative splicing query
 
 The significant events will be saved in **ASP** through *sig_asp*.
 
@@ -160,7 +160,7 @@ asp <- sig_asp(
 )
 ```
 
-# Significant differential alternative splicing genes intersection and visualization
+## Significant differential alternative splicing genes intersection and visualization
 
 Intersect the significant differential AS genes expediently.
 
@@ -174,7 +174,7 @@ A venn plot and a upset plot can be used to visualize the intersection.
 venn_upset_asp(asp)
 ```
 
-# Significant differential alternative splicing events visualization
+## Significant differential alternative splicing events visualization
 
 The figures of tracks can be used to check the differences in your data.
 
@@ -187,7 +187,7 @@ plot_asp(asp, tool = "rmats", i = 1)
 
 ---
 
-# Session Information
+## Session Information
 
 ```{r}
 sessionInfo()
