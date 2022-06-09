@@ -1,8 +1,9 @@
 #' @importFrom glue glue
-#' @importFrom futile.logger flog.info flog.error
+#' @importFrom futile.logger flog.info flog.error DEBUG flog.threshold
 run_cmds <- function(cmds, run = T) {
   if (run) myflog <- futile.logger::flog.info
   if (!run) myflog <- futile.logger::flog.debug
+  futile.logger::flog.threshold(futile.logger::DEBUG)
 
   myflog("The whole workflow:")
   for (name_cmd in names(cmds)) {

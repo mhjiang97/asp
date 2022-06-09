@@ -12,9 +12,12 @@ asp_default_options <- list(
 )
 
 .onLoad <- function(libname, pkgname) {
+  packageStartupMessage("Welcome to asp!")
+
   op <- options()
   toset <- !(names(x = asp_default_options) %in% names(x = op))
   if (any(toset)) options(asp_default_options[toset])
+
   invisible()
 }
 

@@ -427,7 +427,7 @@ cmd_asp <- function(
 #' @param block Default is TRUE. If wait for the end of running.
 #' @import future
 #' @importFrom stats setNames
-#' @importFrom futile.logger flog.warn flog.info
+#' @importFrom futile.logger flog.warn flog.info flog.debug DEBUG flog.threshold
 #' @export
 #' @return An \code{\linkS4class{ASP}} object with results saved in results slot.
 #' @examples
@@ -483,8 +483,12 @@ run_asp <- function(asp, tool, run = T, read_results = T, parallel = T, block = 
   f <- vector("list", length = length(tool)) |> stats::setNames(tool)
 
   for (t in tool) {
+    if (run) myflog <- futile.logger::flog.info
+    if (!run) myflog <- futile.logger::flog.debug
+    futile.logger::flog.threshold(futile.logger::DEBUG)
+
     cmds <- asp@cmds[[t]]
-    futile.logger::flog.info(glue::glue("{t} is running"))
+    myflog(glue::glue("{t} is running."))
     if (run) myCreatedir(glue::glue("{asp@dir_out}/{getOption('asp_tools')[t]}/{mydirs[[t]]}"))
 
     if (parallel) {
