@@ -1,4 +1,4 @@
-# ASP: Alternative Splicing Package  
+# ASP: Alternative Splicing Package  <img src="https://github.com/mhjiang97/asp/blob/master/data-raw/asp.png" align="right" height=150 width=140/>  
 ### *an R package for performing, integrating and visualizing differential alternative splicing analyses from RNA-seq expediently*
 
 ## Author
