@@ -1,6 +1,6 @@
 # ASP: Alternative Splicing Package
 
-### *an R package for performing differential alternative splicing expediently*
+### *an R package for performing, integrating and visualizing differential alternative splicing analyses from RNA-seq expediently*
 
 ## Author
 
@@ -47,7 +47,3 @@ browseVignettes("asp")
 ## License
 
 **ASP** is licensed under the [GNU General Public License v3](http://www.gnu.org/licenses/gpl-3.0.html)
-
-
-
-
