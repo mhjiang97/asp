@@ -39,7 +39,7 @@ for (pkg in pkgs) suppressPackageStartupMessages(library(pkg, character.only = T
 A *tx2gene* for each transcript are provided (GENCODE version32).
 
 ```{r, results = 'asis'}
-data("tx2gene")
+tx2gene <- get0("tx2gene", envir = asNamespace("asp"))
 pander::pandoc.table(tx2gene[1:10, ], justify = "centre")
 ```
 

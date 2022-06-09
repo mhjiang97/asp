@@ -7,7 +7,7 @@ Authors@R:
 Author: Minghao Jiang [aut, cre, cph]
 Maintainer: Minghao Jiang <jiangminghao1001@163.com>
 Description: Differential Alternative Splicing Wrap Incorporating muliple
-    benchmarked tools
+    benchmarked tools.
 License: GPL (>= 3)
 Depends: 
     R (>= 4.1)

@@ -9,3 +9,5 @@
 ^\.github$          # Contributing guidelines, CoC, issue templates, etc.
 ^LICENSE\.md$
 ^data-raw$
+^doc$
+^Meta$
