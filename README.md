@@ -1151,7 +1151,6 @@ AYDxJjQAgA6oE43xR/69C37bRzUw0FsAAB0gNACADmlL+aGGBzfP+a1jQnFZbwEAdIvQAAA6qPYd
 rJ3hyMJ+DQv0FgBABwkNAKCjPug7WD3lDrR1PrHn9wEA3SU0AICOq+HB/aZp/lHvxMumaX7UWwAA
 CA0AAACAU33mtgAAAACnERoAAAAApxIaAAAAAKcSGgAAAAD/r2ma/wCwJ/PPP+9R8AAAAABJRU5E
 rkJggg==' align="right" height=150 width=140/>
-
 ### *an R package for performing, integrating and visualizing differential alternative splicing analyses from RNA-seq expediently*
 
 ## Author
