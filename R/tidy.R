@@ -36,11 +36,12 @@ querySig <- function(dat, ps) {
 }
 
 #' @importFrom vroom vroom
+#' @importFrom utils read.table
 myVroom <- function(file, na_append = NULL, delim = "\t", comment = "", col_names = T) {
   na_origin <- c("", "NA")
   myna <- c(na_origin, na_append)
 
-  n_col <- read.table(
+  n_col <- utils::read.table(
     file, header = T, sep = "\t", fill = T, na.strings = c("NA", na_append), nrows = 10
   ) |>
     ncol()
@@ -54,22 +55,24 @@ myVroom <- function(file, na_append = NULL, delim = "\t", comment = "", col_name
 }
 
 #' @importFrom glue glue
+#' @importFrom stats setNames
+#' @importFrom futile.logger flog.warn flog.error
 findReadFiles <- function(types_all, types_event, dir, patterns) {
   et <- intersect(types_event, types_all)
   if ("all" %in% types_event) et <- types_all
 
-  files_read <- vector("character", length(et)) |> setNames(et)
+  files_read <- vector("character", length(et)) |> stats::setNames(et)
   for (e in names(files_read)) {
     tmp <- list.files(path = dir, pattern = patterns[e], full.names = T)
     if (length(tmp) == 0) {
-      warning(glue::glue("the file of type '{e}' can't be found"))
+      futile.logger::flog.warn(glue::glue("The file of type '{e}' can't be found"))
       tmp <- ""
     }
     files_read[e] <- tmp
   }
 
   if (any(files_read == "")) files_read <- files_read[-which(files_read == "")]
-  if (length(files_read) == 0) stop("can't find any files to read in")
+  if (length(files_read) == 0) return(futile.logger::flog.error("Can't find any files to read in"))
 
   files_read
 }
@@ -275,32 +278,6 @@ read_spladder <- function(asp) {
   if (!is.null(asp@parameters$confidence_level)) confidence_level <- asp@parameters$confidence_level
   types_all <- c("exon_skip", "mutex_exons", "alt_3prime", "alt_5prime", "intron_retention", "mult_exon_skip")
 
-  # patterns <- glue::glue(".*extended_C{confidence_level}_{types_all}.tsv") |>
-  #   as.character() |>
-  #   setNames(types_all)
-  # files_read <- findReadFiles(
-  #   types_all = types_all, types_event = event_type, dir = dir_test, patterns = patterns
-  # )
-  #
-  # list_spladder <- vector("list", length(files_read)) |>
-  #   setNames(names(files_read))
-  # for (e in names(list_spladder)) {
-  #   f <- files_read[e]
-  #   list_spladder[[e]] <- myVroom(f, na_append = c("nan", "NaN", "inf", "-inf")) |>
-  #     dplyr::mutate(as_type = e) |>
-  #     dplyr::rename(chr = chrm, padj = p_val_adj, p = p_val, dpsi = dPSI) |>
-  #     dplyr::mutate(
-  #       as_type = dplyr::case_when(
-  #         as_type == "exon_skip" ~ "SE",
-  #         as_type == "mutex_exons" ~ "MXE",
-  #         as_type == "alt_3prime" ~ "A3SS",
-  #         as_type == "alt_5prime" ~ "A5SS",
-  #         as_type == "intron_retention" ~ "RI",
-  #         as_type == "mult_exon_skip" ~ "SME"
-  #       )
-  #     )
-  # }
-
   patterns_event <- glue::glue(
     "merge_graphs_{types_all}_C{confidence_level}.confirmed.txt"
   ) |>
@@ -344,8 +321,7 @@ read_spladder <- function(asp) {
           as_type == "intron_retention" ~ "RI",
           as_type == "mult_exon_skip" ~ "SME"
         )
-      ) # |>
-    # dplyr::filter(!is.na(p_val), !is.na(p_val_adj))
+      )
   }
 
   for (e in names(list_spladder)) {
@@ -395,6 +371,8 @@ read_bandits <- function(asp) {
 #' @importFrom dplyr mutate case_when bind_rows left_join
 #' @importFrom tibble rownames_to_column as_tibble
 #' @importFrom tidyr separate
+#' @importFrom utils read.delim
+#' @importFrom stats setNames
 read_suppa <- function(asp) {
   dir <- glue::glue("{asp@dir_out}/SUPPA/ds/")
   event_type <- "all"
@@ -405,17 +383,17 @@ read_suppa <- function(asp) {
 
   patterns <- glue::glue(".*\\.{types_all}\\.dpsi.*") |>
     as.character() |>
-    setNames(types_all)
+    stats::setNames(types_all)
   files_read <- findReadFiles(
     types_all = types_all, types_event = event_type, dir = dir, patterns = patterns
   )
 
   list_suppa <- vector("list", length(files_read)) |>
-    setNames(names(files_read))
+    stats::setNames(names(files_read))
   for (e in names(list_suppa)) {
     f <- files_read[e]
-    list_suppa[[e]] <- read.delim(f) |>
-      setNames(colnames_suppa) |>
+    list_suppa[[e]] <- utils::read.delim(f) |>
+      stats::setNames(colnames_suppa) |>
       dplyr::mutate(as_type = e) |>
       tibble::rownames_to_column("event") |>
       tidyr::separate(event, c("gene_id", "coord"), sep = ";") |>
@@ -448,7 +426,7 @@ read_psichomics <- function(asp) {
   psichomics <- myVroom(result_file) |>
     dplyr::rename(
       event = `...1`, chr = Chromosome, strand = Strand, gene_symbol = Gene,
-      p = `T-test p-value`, padj = `T-test p-value (BH adjusted)`, dpsi = `∆ Median`,
+      p = `T-test p-value`, padj = `T-test p-value (BH adjusted)`, dpsi = "\u2206 Median",
       average_psi_1 = `Median (s1)`, average_psi_2 = `Median (s2)`
     ) |>
     dplyr::mutate(

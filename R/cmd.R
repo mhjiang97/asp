@@ -1,6 +1,7 @@
 #' rMATS
 #' @description Generating commands of rMATS workflow.
 #' @name rmats
+#' @aliases rmats
 #' @param dir_out,basics,nproc,gtf,novel,conda_path,conda_env,write_log
 #'     These are obtained from \code{\linkS4class{ASP}} object.
 #' @param variable_read_length Default is FALSE.
@@ -59,6 +60,7 @@ rmats <- function(
 #' CASH
 #' @description Generating commands of CASH workflow.
 #' @name cash
+#' @aliases cash
 #' @param dir_out,basics,gtf,novel,conda_path,conda_env,write_log
 #'     These are obtained from \code{\linkS4class{ASP}} object.
 #' @param cash_jar No default. The path to cash.jar.
@@ -102,6 +104,7 @@ cash <- function(
 #' MAJIQ
 #' @description Generating commands of MAJIQ workflow.
 #' @name majiq
+#' @aliases majiq
 #' @param
 #' dir_out,basics,sampletable,nproc,gff,novel,fa,conda_path,conda_env,write_log
 #'     These are obtained from \code{\linkS4class{ASP}} object.
@@ -235,6 +238,7 @@ majiq <- function(
 #' LeafCutter
 #' @description Generating commands of LeafCutter workflow.
 #' @name leafcutter
+#' @aliases leafcutter
 #' @param
 #' dir_out,sampletable,nproc,np,gtf,conda_path,conda_env,write_log,parallel
 #'     These are obtained from \code{\linkS4class{ASP}} object.
@@ -245,6 +249,9 @@ majiq <- function(
 #'     your downloaded LeafCutter directory.
 #' @param ... nothing
 #' @importFrom glue glue
+#' @importFrom utils write.table
+#' @importFrom stats setNames
+#' @importFrom futile.logger flog.info
 #' @references \url{https://davidaknowles.github.io/leafcutter/}.
 #' @return A list containing LeafCutter workflow.
 leafcutter <- function(
@@ -262,18 +269,18 @@ leafcutter <- function(
   }
 
   strandedness <- sampletable$strandedness |>
-    setNames(sampletable$samples)
+    stats::setNames(sampletable$samples)
   s <- vector("character", nrow(sampletable)) |>
-    setNames(sampletable$samples)
+    stats::setNames(sampletable$samples)
   for (i in names(s)) {
     if (strandedness[i] == "no") s[i] <- "0"
     if (strandedness[i] == "yes") s[i] <- "2"
     if (strandedness[i] == "reverse") s[i] <- "1"
   }
 
-  message("generating groups file used when analyzing differential intron excision")
+  futile.logger::flog.info("Generating groups file used when analyzing differential intron excision")
   myCreatedir(glue::glue("{dir_out}/LeafCutter/ds/"))
-  write.table(
+  utils::write.table(
     sampletable[, c("samples", "conditions")],
     glue::glue("{dir_out}/LeafCutter/ds/groups_file.txt"),
     row.names = F, col.names = F, sep = "\t", quote = F
@@ -337,6 +344,7 @@ leafcutter <- function(
 #' SplAdder
 #' @description Generating commands of SplAdder workflow.
 #' @name spladder
+#' @aliases spladder
 #' @param dir_out,basics,gtf,novel,conda_path,conda_env,write_log
 #'     These are obtained from \code{\linkS4class{ASP}} object.
 #' @param confidence_level Default is 3.
@@ -457,6 +465,7 @@ spladder <- function(
 #' BANDITS
 #' @description Generating commands of BANDITS workflow.
 #' @name bandits
+#' @aliases bandits
 #' @param
 #' dir_out,sampletable,basics,nproc,conda_path,conda_env,write_log,tx2gene
 #'     These are obtained from \code{\linkS4class{ASP}} object.
@@ -464,6 +473,7 @@ spladder <- function(
 #' @param max_genes_per_group Default is 50.
 #' @param ... nothing
 #' @importFrom glue glue
+#' @importFrom utils write.table
 #' @references
 #' \url{https://bioconductor.org/packages/release/bioc/html/BANDITS.html}.
 #' @return A list containing BANDITS workflow.
@@ -573,19 +583,21 @@ bandits <- function(
 #' SUPPA
 #' @description Generating commands of SUPPA workflow.
 #' @name suppa
-#' @param dir_out,np,gtf,conda_path,conda_env,parallel,write_log
+#' @aliases suppa
+#' @param dir_out,basics,np,gtf,conda_path,conda_env,parallel,write_log
 #'     These are obtained from \code{\linkS4class{ASP}} object.
-#' @param dir_envents Any directory is ok.
+#' @param dir_events Any directory is ok.
 #'     The directory holding SUPPA ioe files. Keep NULL will make the ioe files
 #'     be generated in the \emph{dir_out/SUPPA/events}.
 #' @param ... nothing
 #' @importFrom glue glue
 #' @importFrom tximport tximport
 #' @importFrom purrr flatten_chr
+#' @importFrom utils write.table
 #' @references \url{https://github.com/comprna/SUPPA}.
 #' @return A list containing SUPPA workflow.
 suppa <- function(
-  dir_out, gtf, np, conda_path, conda_env, parallel, write_log,
+  dir_out, basics, gtf, np, conda_path, conda_env, parallel, write_log,
   dir_events = NULL, ...
 ) {
   if (is.null(dir_events)) dir_events <- glue::glue("{dir_out}/SUPPA/events/")
@@ -608,8 +620,8 @@ suppa <- function(
   txi <- tximport::tximport(files_tpm, type = "salmon", txOut = T)
   tpm_1 <- txi$abundance[, basics$samples_1]
   tpm_2 <- txi$abundance[, basics$samples_2]
-  write.table(tpm_1, glue::glue("{dir_out}/SUPPA/tpm/{basics$condition_1}.tpm"), quote = F, sep = "\t")
-  write.table(tpm_2, glue::glue("{dir_out}/SUPPA/tpm/{basics$condition_2}.tpm"), quote = F, sep = "\t")
+  utils::write.table(tpm_1, glue::glue("{dir_out}/SUPPA/tpm/{basics$condition_1}.tpm"), quote = F, sep = "\t")
+  utils::write.table(tpm_2, glue::glue("{dir_out}/SUPPA/tpm/{basics$condition_2}.tpm"), quote = F, sep = "\t")
 
   calculate_psi <- vector("list", length = length(events))
   for (e in events) {
@@ -660,6 +672,7 @@ suppa <- function(
 #' psichomics
 #' @description Generating commands of psichomics workflow.
 #' @name psichomics
+#' @aliases psichomics
 #' @param dir_out,basics,sampletable,novel,conda_path,conda_env,write_log
 #'     These are obtained from \code{\linkS4class{ASP}} object.
 #' @param anno_suppa The directory holding SUPPA event files.
@@ -672,6 +685,7 @@ suppa <- function(
 #' @param types_miso Should be like this: "SE,MXE,A5SS,A3SS,RI".
 #' @param ... nothing
 #' @importFrom glue glue
+#' @importFrom utils write.table
 #' @references
 #' \url{https://bioconductor.org/packages/release/bioc/html/psichomics.html}.
 #' @return A list containing psichomics workflow.
@@ -682,7 +696,10 @@ psichomics <- function(
   ...
 ) {
   myCreatedir(glue::glue("{dir_out}/psichomics/"))
-  write.table(sampletable, glue::glue("{dir_out}/psichomics/sampleTable.txt"), quote = F, sep = "\t", row.names = F)
+  utils::write.table(
+    sampletable, glue::glue("{dir_out}/psichomics/sampleTable.txt"),
+    quote = F, sep = "\t", row.names = F
+  )
   cmds <- list()
   rscript <- glue::glue(
     '

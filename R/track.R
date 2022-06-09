@@ -1,8 +1,9 @@
 #' @importFrom tidyr separate
 #' @importFrom dplyr select mutate
-#' @importFrom stringr str_split
+#' @importFrom stringr str_split str_extract
 #' @importFrom GenomicRanges GRanges
 #' @importFrom IRanges IRanges
+#' @importFrom stats na.omit
 ranges_lines <- function(dat, tool, extend_left = 1000, extend_right = 1000) {
   chrs <- genes <- strands <- ids <- vector("character", length = nrow(dat))
   lefts <- rights <- vector("numeric", length = nrow(dat))
@@ -18,7 +19,7 @@ ranges_lines <- function(dat, tool, extend_left = 1000, extend_right = 1000) {
       dplyr::select(!clus2),
     spladder = dat,
     majiq = dat,
-    suppa = dat |> dplyr::mutate(chr = str_extract(coord, "chr[0-9XY]*")),
+    suppa = dat |> dplyr::mutate(chr = stringr::str_extract(coord, "chr[0-9XY]*")),
     psichomics = dat |>
       tidyr::separate(event, c("event", "coord"), sep = "\\_[+-]\\_")
   )
@@ -68,7 +69,7 @@ ranges_lines <- function(dat, tool, extend_left = 1000, extend_right = 1000) {
     coordses[[i]] <- tmp |>
       as.numeric() |>
       suppressWarnings() |>
-      na.omit()
+      stats::na.omit()
     lefts[i] <- min(coordses[[i]])
     rights[i] <- max(coordses[[i]])
   }
@@ -80,6 +81,8 @@ ranges_lines <- function(dat, tool, extend_left = 1000, extend_right = 1000) {
 }
 
 #' @import trackViewer
+#' @importFrom glue glue
+#' @importFrom futile.logger flog.info
 plot_tracks <- function(
   list_bams, ranges_lines, basics_plot, txdb, annotation_db, i
 ) {
@@ -87,7 +90,7 @@ plot_tracks <- function(
   lines <- ranges_lines$lines[[i]]
   bams_1 <- basics_plot$bams_1
   bams_2 <- basics_plot$bams_2
-  message(glue("ploting GENE: {ranges_lines$genes[i]}, ID: {ranges_lines$ids[i]}"))
+  futile.logger::flog.info(glue::glue("ploting GENE: {ranges_lines$genes[i]}, ID: {ranges_lines$ids[i]}"))
   trs <- trackViewer::geneModelFromTxdb(txdb, annotation_db, gr = ranges)
   optSty <- trackViewer::optimizeStyle(trackViewer::trackList(list_bams, trs))
   trackList <- optSty$tracks
@@ -107,13 +110,15 @@ plot_tracks <- function(
   trackViewer::addGuideLine(lines, vp = vp)
 }
 
+#' @importFrom stats na.omit
+#' @importFrom methods is
 getPlotBasics <- function(asp, plot_samples, ...) {
-  if (class(plot_samples) == "numeric") {
+  if (methods::is(plot_samples, "numeric")) {
     bams_1 <- sample(asp@basics$bams_1, plot_samples)
     bams_2 <- sample(asp@basics$bams_2, plot_samples)
-  } else if (class(plot_samples) == "character") {
-    bams_1 <- na.omit(asp@basics$bams_1[plot_samples]) # |> as.character()
-    bams_2 <- na.omit(asp@basics$bams_2[plot_samples]) # |> as.character()
+  } else if (methods::is(plot_samples, "character")) {
+    bams_1 <- stats::na.omit(asp@basics$bams_1[plot_samples]) # |> as.character()
+    bams_2 <- stats::na.omit(asp@basics$bams_2[plot_samples]) # |> as.character()
     if (all(is.na(bams_1))) bams_1 <- NULL
     if (all(is.na(bams_2))) bams_2 <- NULL
   }

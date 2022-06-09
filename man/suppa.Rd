@@ -6,6 +6,7 @@
 \usage{
 suppa(
   dir_out,
+  basics,
   gtf,
   np,
   conda_path,
@@ -17,13 +18,13 @@ suppa(
 )
 }
 \arguments{
-\item{dir_out, np, gtf, conda_path, conda_env, parallel, write_log}{These are obtained from \code{\linkS4class{ASP}} object.}
+\item{dir_out, basics, np, gtf, conda_path, conda_env, parallel, write_log}{These are obtained from \code{\linkS4class{ASP}} object.}
 
-\item{...}{nothing}
-
-\item{dir_envents}{Any directory is ok.
+\item{dir_events}{Any directory is ok.
 The directory holding SUPPA ioe files. Keep NULL will make the ioe files
 be generated in the \emph{dir_out/SUPPA/events}.}
+
+\item{...}{nothing}
 }
 \value{
 A list containing SUPPA workflow.

@@ -9,13 +9,13 @@ venn_upset_asp(asp, tools = "all", type = "all")
 \arguments{
 \item{asp}{An \code{\linkS4class{ASP}} object.}
 
-\item{type}{One of "SE", "MXE", "A3SS", "A5SS", "RI", "SME", "ALE" and "AFE".
-Or use "all" to use the intersections of all AS types.}
-
-\item{tool}{Any combination of "rmats", "cash", "leafcutter", "majiq",
+\item{tools}{Any combination of "rmats", "cash", "leafcutter", "majiq",
 "suppa", "bandits", "psichomics", and "spladder".
 Or use "all" to ues the intersections of all significant results
 stored in your \code{\linkS4class{ASP}} object.}
+
+\item{type}{One of "SE", "MXE", "A3SS", "A5SS", "RI", "SME", "ALE" and "AFE".
+Or use "all" to use the intersections of all AS types.}
 }
 \value{
 A ggplot object.

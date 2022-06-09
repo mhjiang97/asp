@@ -18,6 +18,8 @@ sig_asp(
 )
 }
 \arguments{
+\item{asp}{An \code{\linkS4class{ASP}} object.}
+
 \item{tool}{Any combination of "rmats", "cash", "leafcutter", "majiq",
 "suppa", "bandits", "psichomics", and "spladder".}
 

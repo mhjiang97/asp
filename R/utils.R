@@ -1,38 +1,43 @@
 #' @importFrom glue glue
+#' @importFrom futile.logger flog.info flog.error
 run_cmds <- function(cmds, run = T) {
-  message("All commands to run:")
+  if (run) myflog <- futile.logger::flog.info
+  if (!run) myflog <- futile.logger::flog.debug
+
+  myflog("The whole workflow:")
   for (name_cmd in names(cmds)) {
-    message(glue::glue("{name_cmd}: {cmds[name_cmd]}"))
+    myflog(glue::glue("{name_cmd}: {cmds[name_cmd]}"))
   }
   for (name_cmd in names(cmds)) {
     cmds_now <- cmds[[name_cmd]]
     for (cn in cmds_now) {
-      message(glue::glue("The running command is: {cn}."))
+      myflog(glue::glue("The running command is: {cn}."))
       if (run) {
         fail <- system(cn, wait = T)
         if (fail) {
-          write(glue::glue("Error: step {name_cmd} failed."), stderr())
-          return(fail)
-        } else {message("Finished.")}
+          return(futile.logger::flog.error(glue::glue("Error: step {name_cmd} failed.")))
+          # return(fail)
+        } else {futile.logger::flog.info("Finished.")}
       }
     }
-    message(glue::glue("Step {name_cmd} finished successfully."))
+    if (run) futile.logger::flog.info(glue::glue("Step {name_cmd} finished successfully."))
   }
   return(0)
 }
 
 #' @importFrom glue glue
+#' @importFrom futile.logger flog.info flog.warn
 myCreatedir <- function(dirs) {
-  message("Creating directories")
+  futile.logger::flog.info("Creating directories:")
   for(d in dirs) {
-    message(d)
+    futile.logger::flog.info(d)
     if (!dir.exists(d)) {
       dir.create(d, recursive = T)
     } else {
-      message(glue::glue("{d} exits already."))
+      futile.logger::flog.warn(glue::glue("{d} exits already."))
     }
   }
-  message("Creating directories was done.")
+  futile.logger::flog.info("Creating directories was done.")
 }
 
 myParallel <- function(cmd) {
@@ -56,6 +61,7 @@ myParallel3 <- function(cmd, n = 5) {
 }
 
 #' @importFrom dplyr %>%
+#' @importFrom stats setNames
 getBasics <- function(sampletable) {
   condition_1 <- unique(sampletable$conditions)[1]
   condition_2 <- unique(sampletable$conditions)[2]
@@ -64,15 +70,15 @@ getBasics <- function(sampletable) {
   samples_2 <- sampletable$samples[sampletable$conditions == condition_2]
 
   bams_1 <- sampletable$files_bam[sampletable$conditions == condition_1] |>
-    setNames(samples_1)
+    stats::setNames(samples_1)
   bams_2 <- sampletable$files_bam[sampletable$conditions == condition_2] |>
-    setNames(samples_2)
+    stats::setNames(samples_2)
 
   if ("dirs_salmon" %in% colnames(sampletable)) {
     salmons_1 <- sampletable$dirs_salmon[sampletable$conditions == condition_1] |>
-      setNames(samples_1)
+      stats::setNames(samples_1)
     salmons_2 <- sampletable$dirs_salmon[sampletable$conditions == condition_2] |>
-      setNames(samples_2)
+      stats::setNames(samples_2)
   } else {
     salmons_1 <- salmons_2 <- NULL
   }
@@ -80,28 +86,28 @@ getBasics <- function(sampletable) {
   if ("files_fq" %in% colnames(sampletable)) {
     fqs_R1_1 <- sampletable$files_fq[sampletable$conditions == condition_1] |>
       strsplit(";") |>
-      sapply(function(x) {return(x[1])}) |>
-      setNames(samples_1)
+      stats::setNames(function(x) {return(x[1])}) |>
+      stats::setNames(samples_1)
     fqs_R2_1 <- sampletable$files_fq[sampletable$conditions == condition_1] |>
       strsplit(";") |>
       sapply(function(x) {return(x[2])}) |>
-      setNames(samples_1)
+      stats::setNames(samples_1)
 
     fqs_R1_2 <- sampletable$files_fq[sampletable$conditions == condition_2] |>
       strsplit(";") |>
       sapply(function(x) {return(x[1])}) |>
-      setNames(samples_2)
+      stats::setNames(samples_2)
     fqs_R2_2 <- sampletable$files_fq[sampletable$conditions == condition_2] |>
       strsplit(";") |>
       sapply(function(x) {return(x[2])}) |>
-      setNames(samples_2)
+      stats::setNames(samples_2)
   } else {
     fqs_R1_1 <- fqs_R2_1 <- fqs_R1_2 <- fqs_R2_2 <- NULL
   }
 
 
   files_star_junc <- vector("character", length = nrow(sampletable)) |>
-    setNames(sampletable$samples)
+    stats::setNames(sampletable$samples)
   for (s in names(files_star_junc)) {
     if (is.null(sampletable$files_bam[sampletable$samples == s])) {
       files_star_junc[s] <- ""
@@ -118,12 +124,12 @@ getBasics <- function(sampletable) {
     }
   }
   juncs_star_1 <- files_star_junc[samples_1] |>
-    setNames(samples_1)
+    stats::setNames(samples_1)
   juncs_star_2 <- files_star_junc[samples_2] |>
-    setNames(samples_2)
+    stats::setNames(samples_2)
 
   files_star_quant <- vector("character", length = nrow(sampletable)) |>
-    setNames(sampletable$samples)
+    stats::setNames(sampletable$samples)
   for (s in names(files_star_quant)) {
     if (is.null(sampletable$files_bam[sampletable$samples == s])) {
       files_star_quant[s] <- ""
@@ -140,12 +146,12 @@ getBasics <- function(sampletable) {
     }
   }
   quants_star_1 <- files_star_quant[samples_1] |>
-    setNames(samples_1)
+    stats::setNames(samples_1)
   quants_star_2 <- files_star_quant[samples_2] |>
-    setNames(samples_2)
+    stats::setNames(samples_2)
 
   files_tophat_junc <- vector("character", length = nrow(sampletable)) |>
-    setNames(sampletable$samples)
+    stats::setNames(sampletable$samples)
   for (s in names(files_tophat_junc)) {
     if (is.null(sampletable$files_bam_tophat[sampletable$samples == s])) {
       files_tophat_junc[s] <- ""
@@ -162,9 +168,9 @@ getBasics <- function(sampletable) {
     }
   }
   juncs_tophat_1 <- files_tophat_junc[samples_1] |>
-    setNames(samples_1)
+    stats::setNames(samples_1)
   juncs_tophat_2 <- files_tophat_junc[samples_2] |>
-    setNames(samples_2)
+    stats::setNames(samples_2)
 
   library_type_most <- table(sampletable$library_types) %>% .[. == max(.)] |> names()
   read_length_most <- table(sampletable$read_lengths) %>% .[. == max(.)] |> names() |> as.numeric()
@@ -182,7 +188,7 @@ getBasics <- function(sampletable) {
     juncs_tophat_1, juncs_tophat_2,
     library_type_most, read_length_most, strandedness_most
   ) |>
-    setNames(
+    stats::setNames(
       c(
         "condition_1", "condition_2", "samples_1", "samples_2", "bams_1", "bams_2",
         "salmons_1", "salmons_2", "fqs_R1_1", "fqs_R2_1", "fqs_R1_2", "fqs_R2_2",

@@ -5,3 +5,7 @@
 \alias{ASP-package}
 \title{ASP: A package to facilitate performing differential alternative splicing
     analysis.}
+\description{
+ASP: A package to facilitate performing differential alternative
+    splicing analysis.
+}

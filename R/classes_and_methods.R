@@ -1,5 +1,6 @@
 #' Class \code{ASP}
 #' @name ASP-class
+#' @aliases ASP-class
 #' @description  All information stored in ASP object.
 #'    You can use \code{creatASP} to create an ASP object.
 #'    In this package, most of the functions will use
@@ -63,10 +64,11 @@
 #' @slot ranges_lines list. Storing GRanges, lines, IDs, and genes of the
 #'     significant differential alternative events.
 #' @slot basics_plot list. Storing indications of two/one group(s) of bams.
+#' @importFrom  methods setClass new
 #' @exportClass ASP
 #' @export ASP
 #' @return NULL
-ASP <- setClass(
+ASP <- methods::setClass(
   "ASP", slots = c(
     sampletable = "data.frame",
     tx2gene = "data.frame",
@@ -96,8 +98,9 @@ ASP <- setClass(
   )
 )
 
-setMethod("initialize", "ASP", function(.Object, ...) {
-  .Object <- callNextMethod(.Object, ...)
+#' @importFrom  methods setMethod callNextMethod
+methods::setMethod("initialize", "ASP", function(.Object, ...) {
+  .Object <- methods::callNextMethod(.Object, ...)
   if (all(is.na(.Object@tx2gene))) .Object@tx2gene <- data.frame(gene_id = NULL, gene_symbol = NULL, transcript_id = NULL)
   if (all(is.na(.Object@dir_out))) .Object@dir_out <- "./"
   if (all(is.na(.Object@nproc))) .Object@nproc <- 5
@@ -117,24 +120,27 @@ setMethod("initialize", "ASP", function(.Object, ...) {
 })
 
 #' @importFrom glue glue
+#' @importFrom futile.logger flog.error flog.warn
 validAspObject <- function(object) {
   mycols_needed <- c("samples", "conditions", "read_lengths", "library_types", "strandedness")
   mycols_dispensable <- c("files_bam", "files_fq", "dirs_salmon")
   mycols_atleast1 <- c("files_bam", "files_fq", "dirs_salmon")
   for (mycol in mycols_dispensable) {
     if (!mycol %in% colnames(object@sampletable)) {
-      warning(glue::glue("You didn't provide ASP {mycol}, so some workflows maybe cannot implemented."))
+      futile.logger::flog.warn(
+        glue::glue("The column {mycol} wasn't provided, so some workflows maybe cannot implemented.")
+      )
     }
   }
   if (intersect(c("paired-end", "single-end"), unique(object@sampletable$library_types)) == 0) {
-    errorCondition(
-      "A wrong sampletable provided. Please check your library types!\n
-      Only paired-end and/or single-end are supported."
-    )
+    return(futile.logger::flog.error(
+      "A wrong sampletable provided. Please check your library types! Only paired-end and/or single-end are supported."
+    ))
+    # stop()
   }
   if (nrow(object@tx2gene) == 0 || sum(c("gene_id", "gene_symbol", "transcript_id") %in% colnames(object@tx2gene)) != 3) {
-    warning(
-      "tx2gene is needed and should contain at least three following columns: gene_id, gene_symbol, transcript_id. Automatically generated then."
+    futile.logger::flog.warn(
+      "Slot tx2gene is needed and should contain at least three following columns: gene_id, gene_symbol, transcript_id. Automatically generated then."
     )
   }
 
@@ -142,15 +148,21 @@ validAspObject <- function(object) {
     length(intersect(mycols_needed, colnames(object@sampletable))) != length(mycols_needed) ||
     all(is.na(colnames(object@sampletable))) ||
     length(intersect(mycols_atleast1, colnames(object@sampletable))) < 1
-  ) {errorCondition("A wrong sampletable provided.")}
+  ) {
+    return(futile.logger::flog.error("A wrong sampletable provided."))
+    # stop()
+  }
 }
-setValidity("ASP", validAspObject)
+
+#' @importFrom methods setValidity
+methods::setValidity("ASP", validAspObject)
 
 #' Create an \code{\linkS4class{ASP}} object
 #' @description This function is about how to build an \code{\linkS4class{ASP}}
 #'    object. An \code{\linkS4class{ASP}} object is the base for the whole
 #'    analysing workflow.
 #' @name create_asp
+#' @aliases create_asp
 #' @param ... paramters pass to \code{\linkS4class{ASP}}.
 #'     These flags are mandatory for running AS tools:
 #'     sampletable, gtf, gff, and fa.
@@ -196,8 +208,11 @@ setValidity("ASP", validAspObject)
 create_asp <- function(...) {
   object <- ASP(...)
 
-  if (nrow(object@tx2gene) == 0 || sum(c("gene_id", "gene_symbol", "transcript_id") %in% colnames(object@tx2gene)) != 3) {
-    tmp <- rtracklayer::import(asp@gtf)
+  if (
+    nrow(object@tx2gene) == 0 ||
+    sum(c("gene_id", "gene_symbol", "transcript_id") %in% colnames(object@tx2gene)) != 3
+  ) {
+    tmp <- rtracklayer::import(object@gtf)
     tmp <- tmp[tmp$type == "transcript"]
     chr <- as.character(tmp@seqnames)
     gene_id <- tmp$gene_id
@@ -220,6 +235,7 @@ create_asp <- function(...) {
 #' @description This function is about to generate desire commands to run or to
 #'     check.
 #' @name cmd_asp
+#' @aliases cmd_asp
 #' @param asp An \code{\linkS4class{ASP}} object.
 #' @param conda_env The path to environment each tools depend on.
 #'     Different tools can rely on different envs.
@@ -237,6 +253,8 @@ create_asp <- function(...) {
 #'     \code{\link{bandits}}, \code{\link{psichomics}},
 #'     and \code{\link{spladder}}.
 #' @importFrom dplyr distinct select
+#' @importFrom stats setNames
+#' @importFrom futile.logger flog.warn
 #' @export
 #' @return An \code{\linkS4class{ASP}} object with commands of each workflows
 #'     saved in cmds slot.
@@ -264,7 +282,9 @@ cmd_asp <- function(
   if (is.null(dir_out)) {
     dir_out <- asp@dir_out
   } else {
-    warning("A new dir_out was provided, overriding the exsiting one, and the dir_out slot will be upgraded.")
+    futile.logger::flog.warn(
+      "A new dir_out was provided, overriding the exsiting one, and the dir_out slot will be upgraded."
+    )
     asp@dir_out <- dir_out
   }
   if (is.null(nproc)) nproc <- asp@nproc
@@ -277,14 +297,18 @@ cmd_asp <- function(
   if (is.null(sampletable)) {
     sampletable <- asp@sampletable
   } else {
-    warning("A new sampletable was provided, overriding the exsiting one, and the basics slot will be upgraded.")
+    futile.logger::flog.warn(
+      "A new sampletable was provided, overriding the exsiting one, and the basics slot will be upgraded."
+    )
     asp@sampletable <- sampletable
     asp@basics <- getBasics(asp@sampletable)
   }
   if (is.null(tx2gene)) {
     tx2gene <- asp@tx2gene
   } else {
-    warning("A new tx2gene was provided, overriding the exsiting one, and the tx2gene_convert slot will be upgraded.")
+    futile.logger::flog.warn(
+      "A new tx2gene was provided, overriding the exsiting one, and the tx2gene_convert slot will be upgraded."
+    )
     asp@tx2gene <- tx2gene
     asp@tx2gene_convert <- asp@tx2gene |>
       dplyr::distinct(gene_id, .keep_all = T) |>
@@ -300,7 +324,7 @@ cmd_asp <- function(
       if (is.null(names(conda_env))) {
         conda_env <- rep(conda_env[1], length(tool))
       } else {
-        ce <- rep(NA, length(tool)) |> setNames(tool)
+        ce <- rep(NA, length(tool)) |> stats::setNames(tool)
         ce[names(conda_env)] <- conda_env
         conda_env <- ce
       }
@@ -313,7 +337,7 @@ cmd_asp <- function(
       if (is.null(names(conda_path))) {
         conda_path <- rep(conda_path[1], length(tool))
       } else {
-        cp <- rep(asp@conda_path, length(tool)) |> setNames(tool)
+        cp <- rep(asp@conda_path, length(tool)) |> stats::setNames(tool)
         cp[names(conda_path)] <- conda_path
         conda_path <- cp
       }
@@ -370,7 +394,7 @@ cmd_asp <- function(
   }
   if ("suppa" %in% tool) {
     asp@cmds[["suppa"]] <- suppa(
-      dir_out = dir_out, gtf = gtf, np = np, parallel = parallel,
+      dir_out = dir_out, basics = basics, gtf = gtf, np = np, parallel = parallel,
       conda_path = conda_path["suppa"], conda_env = conda_env["suppa"],
       write_log = write_log, ...
     )
@@ -390,6 +414,7 @@ cmd_asp <- function(
 #'     read in the results
 #' @description This function is about to run each workflow and read in results.
 #' @name run_asp
+#' @aliases run_asp
 #' @param asp An \code{\linkS4class{ASP}} object.
 #' @param tool Any combination of "rmats", "cash", "leafcutter", "majiq",
 #'     "suppa", "bandits", "psichomics", and "spladder".
@@ -401,6 +426,8 @@ cmd_asp <- function(
 #'     The function \code{\link[future]{future}} is imposed.
 #' @param block Default is TRUE. If wait for the end of running.
 #' @import future
+#' @importFrom stats setNames
+#' @importFrom futile.logger flog.warn flog.info
 #' @export
 #' @return An \code{\linkS4class{ASP}} object with results saved in results slot.
 #' @examples
@@ -417,17 +444,18 @@ run_asp <- function(asp, tool, run = T, read_results = T, parallel = T, block = 
   if (run && length(tool) > 1) future::plan(multisession)
 
   if (run == F && read_results == T && parallel == T) {
-    stop("Please set parallel to FALSE when reading in results only.")
+    futile.logger::flog.warn("Change parallel to FALSE when reading in results only.")
+    parallel <- F
   }
   if (read_results && block == F && parallel) {
-    warning(
+    futile.logger::flog.warn(
       "You didn't wait for the finish but wanted to read in results,
       read_results has been set to FALSE automatically."
     )
     read_results <- F
   }
   if (length(tool) <= 1 && parallel) {
-    message("The number of tools you want to run is 1, and reset parallel to FALSE.")
+    futile.logger::flog.warn("The number of tools you want to run is 1, and reset parallel to FALSE.")
     parallel <- F
   }
 
@@ -452,11 +480,11 @@ run_asp <- function(asp, tool, run = T, read_results = T, parallel = T, block = 
     "psichomics" = ""
   )
 
-  f <- vector("list", length = length(tool)) |> setNames(tool)
+  f <- vector("list", length = length(tool)) |> stats::setNames(tool)
 
   for (t in tool) {
     cmds <- asp@cmds[[t]]
-    message(glue::glue("{t} is running"))
+    futile.logger::flog.info(glue::glue("{t} is running"))
     if (run) myCreatedir(glue::glue("{asp@dir_out}/{getOption('asp_tools')[t]}/{mydirs[[t]]}"))
 
     if (parallel) {
@@ -485,7 +513,7 @@ run_asp <- function(asp, tool, run = T, read_results = T, parallel = T, block = 
   if (read_results && block) {
     asp@results <- asp@results[!names(asp@results) %in% tool]
     for (t in tool) {
-      message(glue::glue("read in {t} results"))
+      futile.logger::flog.info(glue::glue("Reading in {t} results."))
       asp@results[[t]] <- myreadin[[t]](asp)
     }
   }
@@ -496,6 +524,8 @@ run_asp <- function(asp, tool, run = T, read_results = T, parallel = T, block = 
 #' Query significant results
 #' @description This function is about to extract the significant results.
 #' @name sig_asp
+#' @aliases sig_asp
+#' @param asp An \code{\linkS4class{ASP}} object.
 #' @param tool Any combination of "rmats", "cash", "leafcutter", "majiq",
 #'     "suppa", "bandits", "psichomics", and "spladder".
 #' @param p_adj The threshold for the padj column.
@@ -550,6 +580,7 @@ sig_asp <- function(
 #' Prepare for plotting tracks of significant differential AS genes
 #' @description This function is to load a txdb and an annotation database.
 #' @name plot_pre_asp
+#' @aliases plot_pre_asp
 #' @param asp An \code{\linkS4class{ASP}} object.
 #' @param txdb TxDb. If NULL, the gtf stored in \code{\linkS4class{ASP}} will be
 #'     used.
@@ -565,6 +596,8 @@ sig_asp <- function(
 #'     AS events.
 #' @importFrom GenomicFeatures makeTxDbFromGFF
 #' @importFrom trackViewer importBam
+#' @importFrom stats setNames
+#' @importFrom futile.logger flog.warn flog.error
 #' @export
 #' @return An \code{\linkS4class{ASP}} object.
 #' @examples
@@ -587,17 +620,20 @@ plot_pre_asp <- function(
   if (!is.null(txdb) && !is.null(asp@txdb)) {
     x <- readline(prompt = "The txdb is already stored in your asp, would you like to replace it? y/n: ")
     if (x == "y") asp@txdb <- txdb
-    if (x == "n") message("The new txdb will be discarded.")
-    if (!x %in% c("y", "n")) stop("Please input y or n.")
+    if (x == "n") futile.logger::flog.warn("The new txdb will be discarded.")
+    if (!x %in% c("y", "n")) {
+      return(futile.logger::flog.error("Please input y or n."))
+      # stop()
+    }
   }
   if (!is.null(txdb) && is.null(asp@txdb)) asp@txdb <- txdb
 
-  if (is.null(annotation_db) && is.null(asp@annotation_db)) stop("Please provide an annotation db.")
+  if (is.null(annotation_db) && is.null(asp@annotation_db)) return(futile.logger::flog.error("Please provide an annotation db."))
   if (!is.null(annotation_db) && !is.null(asp@annotation_db)) {
     x <- readline(prompt = "The annotation_db is already stored in your asp, would you like to replace it? y/n: ")
     if (x == "y") asp@annotation_db <- annotation_db
-    if (x == "n") message("The new annotation_db will be discarded.")
-    if (!x %in% c("y", "n")) stop("Please input y or n.")
+    if (x == "n") futile.logger::flog.warn("The new annotation_db will be discarded.")
+    if (!x %in% c("y", "n")) return(futile.logger::flog.error("Please input y or n."))
   }
   if (!is.null(annotation_db) && is.null(asp@annotation_db)) asp@annotation_db <- annotation_db
 
@@ -611,7 +647,8 @@ plot_pre_asp <- function(
     if (is.null(d)) d <- asp@sig_results[[t]][1:top, ]
     asp@ranges_lines[[t]] <- ranges_lines(dat = d, tool = t, ...)
 
-    list_bams <- vector("list", length = length(c(bams_1, bams_2))) |> setNames(names(c(bams_1, bams_2)))
+    list_bams <- vector("list", length = length(c(bams_1, bams_2))) |>
+      stats::setNames(names(c(bams_1, bams_2)))
     for (s in names(list_bams)) {
       list_bams[[s]] <- trackViewer::importBam(c(bams_1, bams_2)[s], ranges = asp@ranges_lines[[t]]$ranges)
     }
@@ -625,6 +662,7 @@ plot_pre_asp <- function(
 #' @description This function is to plot tracks
 #'     using \code{\link[trackViewer]{trackViewer-package}}.
 #' @name plot_asp
+#' @aliases plot_asp
 #' @param asp An \code{\linkS4class{ASP}} object.
 #' @param tool One of "rmats", "cash", "leafcutter", "majiq",
 #'     "suppa", "psichomics", or "spladder".
@@ -647,15 +685,17 @@ plot_asp <- function(asp, tool, i = 1) {
 #' @description This function is to retrieve intersections of significant
 #'     results of different workflows.
 #' @name intersect_asp
+#' @aliases intersect_asp
 #' @param asp An \code{\linkS4class{ASP}} object.
-#' @param tool Any combination of "rmats", "cash", "leafcutter", "majiq",
+#' @param tools Any combination of "rmats", "cash", "leafcutter", "majiq",
 #'     "suppa", "bandits", "psichomics", and "spladder".
 #'     Or use "all" to retrieve the intersections of all significant results
 #'     stored in your \code{\linkS4class{ASP}} object.
 #' @param type One of "SE", "MXE", "A3SS", "A5SS", "RI", "SME", "ALE" and "AFE".
 #'     Or use "all" to retrieve the intersections of all AS types.
-#' @importFrom dplyr %>% filter select mutate
+#' @importFrom dplyr %>% filter select mutate everything
 #' @importFrom tibble column_to_rownames as_tibble rownames_to_column
+#' @importFrom stats na.omit
 #' @export
 #' @return An \code{\linkS4class{ASP}} object with intersection tibble
 #'     stored in the intersection slot.
@@ -680,11 +720,11 @@ intersect_asp <- function(asp, tools = "all", type = "all") {
   ds_gene_all <- sapply(results, function(x) {x$gene_symbol}) |>
     unlist() |>
     unique() |>
-    na.omit()
+    stats::na.omit()
   dat_ds_gene <- data.frame(matrix(0, nrow = length(ds_gene_all), ncol = length(results)))
   colnames(dat_ds_gene) <- names(results)
   dat_ds_gene$ds_gene <- ds_gene_all
-  dat_ds_gene <- dplyr::select(dat_ds_gene, ds_gene, everything())
+  dat_ds_gene <- dplyr::select(dat_ds_gene, ds_gene, dplyr::everything())
   for (t in names(results)) {
     ds_tbl <- table(results[[t]]$gene_symbol) %>%
       {
@@ -713,8 +753,9 @@ intersect_asp <- function(asp, tools = "all", type = "all") {
 #' Visualize the intersection
 #' @description This function is to draw upset and venn plots.
 #' @name venn_upset_asp
+#' @aliases venn_upset_asp
 #' @param asp An \code{\linkS4class{ASP}} object.
-#' @param tool Any combination of "rmats", "cash", "leafcutter", "majiq",
+#' @param tools Any combination of "rmats", "cash", "leafcutter", "majiq",
 #'     "suppa", "bandits", "psichomics", and "spladder".
 #'     Or use "all" to ues the intersections of all significant results
 #'     stored in your \code{\linkS4class{ASP}} object.

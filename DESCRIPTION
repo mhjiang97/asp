@@ -8,11 +8,12 @@ Author: Minghao Jiang [aut, cre, cph]
 Maintainer: Minghao Jiang <jiangminghao1001@163.com>
 Description: Differential Alternative Splicing Wrap Incorporating muliple
     benchmarked tools
-License: GPL-3.0
+License: GPL (>= 3)
 Depends: 
     R (>= 4.1)
 Imports: 
     dplyr,
+    futile.logger,
     future,
     GenomicFeatures,
     GenomicRanges,
@@ -22,6 +23,7 @@ Imports:
     ggsci,
     glue,
     IRanges,
+    methods,
     purrr,
     rtracklayer,
     stringr,
@@ -30,13 +32,20 @@ Imports:
     trackViewer,
     tximport,
     UpSetR,
-    vroom
+    vroom,
+    yyplot
+Suggests: 
+    knitr,
+    pander,
+    rmarkdown
+VignetteBuilder: 
+    knitr
 Remotes: 
     GuangchuangYu/yyplot
+biocViews: DataImport, GeneExpression, ImmunoOncology, Preprocessing,
+    RNASeq, Software, Transcription, Transcriptomics, Visualization,
+    Annotation, DataRepresentation, Infrastructure, Coverage, Genetics
+    GenomeAnnotation, Sequencing
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.0
-Suggests: 
-    knitr,
-    rmarkdown
-VignetteBuilder: knitr

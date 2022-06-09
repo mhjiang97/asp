@@ -30,7 +30,7 @@ knitr::opts_chunk$set(
 *Packages messages are suppressed when starting up.*
 
 ```{r setup}
-pkgs <- c("asp", "glue", "org.Hs.eg.db")
+pkgs <- c("asp", "glue", "org.Hs.eg.db", "pander")
 for (pkg in pkgs) suppressPackageStartupMessages(library(pkg, character.only = T))
 ```
 
@@ -43,28 +43,17 @@ data("tx2gene")
 pander::pandoc.table(tx2gene[1:10, ], justify = "centre")
 ```
 
-The raw sample *bam* files, *salmon* results, and *fastq* files are also provided.
+The raw sample *bam* files and *salmon* results are also provided.
 
 ```{r}
 bams_s1 <- system.file("extdata", glue("star/sample{1:4}/sample{1:4}.SortedByCoord.bam"), package = "asp")
 bams_s2 <- system.file("extdata", glue("star/sample{5:8}/sample{5:8}.SortedByCoord.bam"), package = "asp")
 salmons_s1 <- system.file("extdata", glue("salmon/sample{1:4}/"), package = "asp")
 salmons_s2 <- system.file("extdata", glue("salmon/sample{5:8}/"), package = "asp")
-fqs_s1 <- paste(
-  system.file("extdata", glue("fq/sample{1:4}_R1.fq.gz"), package = "asp"),
-  system.file("extdata", glue("fq/sample{1:4}_R2.fq.gz"), package = "asp"),
-  sep = ";"
-)
-fqs_s2 <- paste(
-  system.file("extdata", glue("fq/sample{5:8}_R1.fq.gz"), package = "asp"),
-  system.file("extdata", glue("fq/sample{5:8}_R2.fq.gz"), package = "asp"),
-  sep = ";"
-)
 sampleTable <- data.frame(
   samples = glue("sample{1:8}"),
   conditions = rep(c("s1", "s2"), each = 4),
   files_bam = c(bams_s1, bams_s2),
-  files_fq = c(fqs_s1, fqs_s2),
   dirs_salmon = c(salmons_s1, salmons_s2),
   read_lengths = rep(101, 8),
   library_types = rep("paired-end", 8),
