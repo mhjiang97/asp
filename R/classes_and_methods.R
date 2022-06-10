@@ -379,7 +379,7 @@ cmd_asp <- function(
   }
   if ("spladder" %in% tool) {
     asp@cmds[["spladder"]] <- spladder(
-      dir_out = dir_out, basics = basics, gtf = gtf, novel = novel,
+      dir_out = dir_out, basics = basics, gtf = gtf, novel = novel, parallel = parallel, np = np,
       conda_path = conda_path["spladder"], conda_env = conda_env["spladder"],
       write_log = write_log, ...
     )

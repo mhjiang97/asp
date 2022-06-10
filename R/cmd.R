@@ -353,7 +353,7 @@ leafcutter <- function(
 #' @references \url{https://spladder.readthedocs.io/en/latest/}.
 #' @return A list containing SplAdder workflow.
 spladder <- function(
-  dir_out, basics, gtf, novel, conda_path, conda_env, write_log,
+  dir_out, basics, gtf, novel, conda_path, conda_env, write_log, parallel, np,
   confidence_level = 3, ...
 ) {
   readlen <- basics$read_length_most
@@ -390,6 +390,7 @@ spladder <- function(
       -o {dir_out}/SplAdder \\
       -a {gtf} \\
       -b {c(basics$bams_1, basics$bams_2)} \\
+      --merge-strat merge_graphs \ \
       --quantify-graph \\
       --qmode single \\
       -n {readlen} \\
@@ -402,6 +403,7 @@ spladder <- function(
       -o {dir_out}/SplAdder \\
       -a {gtf} \\
       -b {paste(b1, b2, sep = ',')} \\
+      --merge-strat merge_graphs \\
       --quantify-graph \\
       --qmode collect \\
       -n {readlen} \\
@@ -425,7 +427,7 @@ spladder <- function(
       cmds[["merging graphs"]] <- paste(cmds[["merging graphs"]], "--no-insert-ir --no-insert-es --no-insert-ni")
       cmds[["quantifying"]] <- paste(cmds[["quantifying"]], "--no-insert-ir --no-insert-es --no-insert-ni")
       cmds[["collecting"]] <- paste(cmds[["collecting"]], "--no-insert-ir --no-insert-es --no-insert-ni")
-      cmds[["calling events"]] <- paste(cmds[["calling events"]], "--no-insert-ir --no-insert-es --no-insert-ni --no-quantify-graph")
+      cmds[["calling events"]] <- paste(cmds[["calling events"]], "--no-insert-ir --no-insert-es --no-insert-ni")
     }
     if (write_log) {
       cmds[["generating single graph"]] <- paste(cmds[["generating single graph"]], glue::glue("1>{dir_out}/SplAdder/_log.build.{c(basics$samples_1, basics$samples_2)} 2>&1"))
@@ -457,6 +459,11 @@ spladder <- function(
         glue::glue("source {conda_path}/bin/activate {conda_env} &&"), cmds[[s]]
       )
     }
+  }
+
+  if (parallel) {
+    cmds[["generating single graph"]] <- myParallel2(cmds[["generating single graph"]], n = np)
+    cmds[["quantifying"]] <- myParallel2(cmds[["quantifying"]], n = np)
   }
 
   cmds

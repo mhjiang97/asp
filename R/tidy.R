@@ -271,8 +271,8 @@ read_leafcutter <- function(asp) {
 #' @importFrom stringr str_replace_all
 #' @importFrom dplyr rowwise mutate ungroup rename case_when left_join bind_rows
 read_spladder <- function(asp) {
-  dir_test <- glue::glue("{asp@dir_out}/SplAdder/graphs/testing_{asp@basics$condition_1}_vs_{asp@basics$condition_2}")
-  dir_event <- glue::glue("{asp@dir_out}/SplAdder/graphs/")
+  dir_test <- glue::glue("{asp@dir_out}/SplAdder/testing_{asp@basics$condition_1}_vs_{asp@basics$condition_2}")
+  dir_event <- glue::glue("{asp@dir_out}/SplAdder/")
   event_type <- "all"
   confidence_level <- 3
   if (!is.null(asp@parameters$confidence_level)) confidence_level <- asp@parameters$confidence_level
