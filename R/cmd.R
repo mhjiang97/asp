@@ -390,7 +390,7 @@ spladder <- function(
       -o {dir_out}/SplAdder \\
       -a {gtf} \\
       -b {c(basics$bams_1, basics$bams_2)} \\
-      --merge-strat merge_graphs \ \
+      --merge-strat merge_graphs \\
       --quantify-graph \\
       --qmode single \\
       -n {readlen} \\
