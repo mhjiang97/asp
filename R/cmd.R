@@ -13,7 +13,7 @@
 #' @references \url{https://github.com/Xinglab/rmats-turbo}.
 #' @return A list containing rMATS workflow.
 rmats <- function(
-  dir_out, basics, nproc, gtf, novel, conda_path, conda_env, write_log,
+  dir_out, basics, nproc, gtf, novel_ss, conda_path, conda_env, write_log,
   variable_read_length = F, paired_stats = F, cstat = 0.0001, allow_clipping = T, ...
 ) {
   # myCreatedir(glue("{dir_out}/rMATS"))
@@ -48,7 +48,7 @@ rmats <- function(
     --tmp {dir_out}/rMATS/tmp/"
   )
   if (!is.null(conda_env) && !is.na(conda_env)) cmds[["running rMATS"]] <- paste(glue::glue("source {conda_path}/bin/activate {conda_env} &&"), cmds[["running rMATS"]])
-  if (novel) cmds[["running rMATS"]] <- paste(cmds[["running rMATS"]], "--novelSS")
+  if (novel_ss) cmds[["running rMATS"]] <- paste(cmds[["running rMATS"]], "--novelSS")
   if (variable_read_length) cmds[["running rMATS"]] <- paste(cmds[["running rMATS"]], "--variable-read-length")
   if (paired_stats) cmds[["running rMATS"]] <- paste(cmds[["running rMATS"]], "--paired-stats")
   if (allow_clipping) cmds[["running rMATS"]] <- paste(cmds[["running rMATS"]], "--allow-clipping")
@@ -353,7 +353,7 @@ leafcutter <- function(
 #' @references \url{https://spladder.readthedocs.io/en/latest/}.
 #' @return A list containing SplAdder workflow.
 spladder <- function(
-  dir_out, basics, gtf, novel, conda_path, conda_env, write_log, parallel, np,
+  dir_out, basics, gtf, novel, novel_ss, conda_path, conda_env, write_log, parallel, np,
   confidence_level = 3, ...
 ) {
   readlen <- basics$read_length_most
@@ -371,8 +371,7 @@ spladder <- function(
       --merge-strat single \\
       -n {readlen} \\
       -c {confidence_level} \\
-      --no-extract-ase \\
-      --validate-sg"
+      --no-extract-ase"
     )
     cmds[["merging graphs"]] <- glue::glue(
       "spladder build \\
@@ -382,8 +381,7 @@ spladder <- function(
       --merge-strat merge_graphs \\
       -n {readlen} \\
       -c {confidence_level} \\
-      --no-extract-ase \\
-      --validate-sg"
+      --no-extract-ase"
     )
     cmds[["quantifying"]] <- glue::glue(
       "spladder build \\
@@ -395,8 +393,7 @@ spladder <- function(
       --qmode single \\
       -n {readlen} \\
       -c {confidence_level} \\
-      --no-extract-ase \\
-      --validate-sg"
+      --no-extract-ase"
     )
     cmds[["collecting"]] <- glue::glue(
       "spladder build \\
@@ -408,8 +405,7 @@ spladder <- function(
       --qmode collect \\
       -n {readlen} \\
       -c {confidence_level} \\
-      --no-extract-ase \\
-      --validate-sg"
+      --no-extract-ase"
     )
     cmds[["calling events"]] <- glue::glue(
       "spladder build \\
@@ -419,9 +415,18 @@ spladder <- function(
       --event-types exon_skip,intron_retention,alt_3prime,alt_5prime,mult_exon_skip,mutex_exons \\
       --output-txt \\
       -n {readlen} \\
-      -c {confidence_level} \\
-      --validate-sg"
+      -c {confidence_level}"
     )
+    cmds[["testing alternative splicing events"]] <- glue::glue(
+      "spladder test \\
+    --readlen {readlen} \\
+    --conditionA {b1} \\
+    --conditionB {b2} \\
+    --labelA {basics$condition_1} \\
+    --labelB {basics$condition_2} \\
+    --outdir {dir_out}/SplAdder"
+    )
+
     if (!novel) {
       cmds[["generating single graph"]] <- paste(cmds[["generating single graph"]], "--no-insert-ir --no-insert-es --no-insert-ni")
       cmds[["merging graphs"]] <- paste(cmds[["merging graphs"]], "--no-insert-ir --no-insert-es --no-insert-ni")
@@ -429,30 +434,29 @@ spladder <- function(
       cmds[["collecting"]] <- paste(cmds[["collecting"]], "--no-insert-ir --no-insert-es --no-insert-ni")
       cmds[["calling events"]] <- paste(cmds[["calling events"]], "--no-insert-ir --no-insert-es --no-insert-ni")
     }
+    if (!novel_ss && novel) {
+      for (
+        s in c(
+          "generating single graph", "merging graphs", "quantifying", "collecting",
+          "calling events", "testing alternative splicing events"
+        )
+      ) {cmds[[s]] <- paste(cmds[[s]], "--validate-sg")}
+    }
     if (write_log) {
       cmds[["generating single graph"]] <- paste(cmds[["generating single graph"]], glue::glue("1>{dir_out}/SplAdder/_log.build.{c(basics$samples_1, basics$samples_2)} 2>&1"))
       cmds[["merging graphs"]] <- paste(cmds[["merging graphs"]], glue::glue("1>{dir_out}/SplAdder/_log.merge_graphs 2>&1"))
       cmds[["quantifying"]] <- paste(cmds[["quantifying"]], glue::glue("1>{dir_out}/SplAdder/_log.quantification.{c(basics$samples_1, basics$samples_2)} 2>&1"))
       cmds[["collecting"]] <- paste(cmds[["collecting"]], glue::glue("1>{dir_out}/SplAdder/_log.collect 2>&1"))
       cmds[["calling events"]] <- paste(cmds[["calling events"]], glue::glue("1>{dir_out}/SplAdder/_log.event_calling 2>&1"))
+      cmds[["testing alternative splicing events"]] <- paste(cmds[["testing alternative splicing events"]], glue::glue("1>{dir_out}/SplAdder/_log.test 2>&1"))
     }
   }
-
-  cmds[["testing alternative splicing events"]] <- glue::glue(
-    "spladder test \\
-    --readlen {readlen} \\
-    --conditionA {b1} \\
-    --conditionB {b2} \\
-    --labelA {basics$condition_1} \\
-    --labelB {basics$condition_2} \\
-    --outdir {dir_out}/SplAdder"
-  )
-  if (write_log) cmds[["testing alternative splicing events"]] <- paste(cmds[["testing alternative splicing events"]], glue::glue("1>{dir_out}/SplAdder/_log.test 2>&1"))
 
   if (!is.null(conda_env) && !is.na(conda_env)) {
     for (
       s in c(
-        "generating single graph", "merging graphs", "quantifying", "collecting", "calling events", "testing alternative splicing events"
+        "generating single graph", "merging graphs", "quantifying", "collecting",
+        "calling events", "testing alternative splicing events"
       )
     ) {
       cmds[[s]] <- paste(
@@ -616,13 +620,22 @@ suppa <- function(
     cmds[["generating events"]] <- glue::glue(
       "suppa.py generateEvents -i {gtf} -o {dir_events}/events -f ioe -e SE SS MX RI FL"
     )
+    if (!is.null(conda_env) && !is.na(conda_env)) {
+      cmds[["generating events"]] <- paste(
+        glue::glue("source {conda_path}/bin/activate {conda_env} &&"), cmds[["generating events"]]
+      )
+    }
     run_cmds(cmds)
     cmds <- list()
   }
 
-  ioe_suppa <- vector("character", length = length(events))
-  names(ioe_suppa) <- events
-  for (e in events) ioe_suppa[e] <- list.files(dir_events, pattern = glue::glue(".*{e}.*\\.ioe"), full.names = T)
+  # ioe_suppa <- vector("character", length = length(events))
+  # names(ioe_suppa) <- events
+  patterns <- glue::glue(".*{event}.*\\.ioe") |>
+    as.character() |>
+    setNames(event)
+  ioe_suppa <- findReadFiles(types_all = events, types_event = "all", dir = dir_events, patterns = patterns)
+  # for (e in events) ioe_suppa[e] <- list.files(dir_events, pattern = glue::glue(".*{e}.*\\.ioe"), full.names = T)
   files_tpm <- c(basics$salmons_1, basics$salmons_2)
   txi <- tximport::tximport(files_tpm, type = "salmon", txOut = T)
   tpm_1 <- txi$abundance[, basics$samples_1]

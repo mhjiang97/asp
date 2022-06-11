@@ -79,6 +79,7 @@ ASP <- methods::setClass(
     dir_out = "character",
     nproc = "numeric",
     novel = "logical",
+    novel_ss = "logical",
     write_log = "logical",
     parallel = "logical",
     np = "numeric",
@@ -105,6 +106,7 @@ methods::setMethod("initialize", "ASP", function(.Object, ...) {
   if (all(is.na(.Object@dir_out))) .Object@dir_out <- "./"
   if (all(is.na(.Object@nproc))) .Object@nproc <- 5
   if (all(is.na(.Object@novel))) .Object@novel <- F
+  if (all(is.na(.Object@novel_ss))) .Object@novel_ss <- F
   if (all(is.na(.Object@write_log))) .Object@write_log <- T
   if (all(is.na(.Object@parallel))) .Object@parallel <- T
   if (all(is.na(.Object@np))) .Object@np <- 5
@@ -274,7 +276,7 @@ create_asp <- function(...) {
 cmd_asp <- function(
   asp, conda_env = NULL, tool, tx2gene = NULL,
   dir_out = NULL, nproc = NULL, gtf = NULL, gff = NULL, fa = NULL,
-  parallel = NULL, np = NULL, basics = NULL, sampletable = NULL, novel = NULL,
+  parallel = NULL, np = NULL, basics = NULL, sampletable = NULL, novel = NULL, novel_ss = NULL,
   conda_path = NULL, write_log = NULL, ...
 ) {
   # asp@parameters_addition <- list(...)
@@ -315,6 +317,7 @@ cmd_asp <- function(
       dplyr::select(gene_id, gene_symbol)
   }
   if (is.null(novel)) novel <- asp@novel
+  if (is.null(novel_ss)) novel <- asp@novel_ss
   if (is.null(conda_path)) conda_path <- asp@conda_path
   if (is.null(write_log)) write_log <- asp@write_log
   asp@parameters <- list(...)
@@ -350,7 +353,7 @@ cmd_asp <- function(
 
   if ("rmats" %in% tool) {
     asp@cmds[["rmats"]] <- rmats(
-      dir_out = dir_out, basics = basics, nproc = nproc, gtf = gtf, novel = novel,
+      dir_out = dir_out, basics = basics, nproc = nproc, gtf = gtf, novel_ss = novel_ss,
       conda_path = conda_path["rmats"], conda_env = conda_env["rmats"],
       write_log = write_log, ...
     )
@@ -379,7 +382,8 @@ cmd_asp <- function(
   }
   if ("spladder" %in% tool) {
     asp@cmds[["spladder"]] <- spladder(
-      dir_out = dir_out, basics = basics, gtf = gtf, novel = novel, parallel = parallel, np = np,
+      dir_out = dir_out, basics = basics, gtf = gtf, novel = novel, novel_ss = novel_ss,
+      parallel = parallel, np = np,
       conda_path = conda_path["spladder"], conda_env = conda_env["spladder"],
       write_log = write_log, ...
     )
@@ -474,7 +478,7 @@ run_asp <- function(asp, tool, run = T, read_results = T, parallel = T, block = 
     "cash" = "",
     "leafcutter" = c("ds", "juncs", "cluster"),
     "majiq" = c("build", "psi", "deltapsi", "voila"),
-    "spladder" = "",
+    "spladder" = c("spladder", "tmp"),
     "bandits" = "",
     "suppa" = c("tpm", "psi", "ds"),
     "psichomics" = ""
