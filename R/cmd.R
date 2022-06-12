@@ -143,16 +143,11 @@ majiq <- function(
   cmds <- list()
 
   cmds[["generating config"]] <- glue::glue(
-    'echo "[info]\nbamdirs={bamdirs}\\
-    \ngenome={fa}\nstrandness={strandness}\n\\
-    [experiments]\n{basics$condition_1}={b1}\n{basics$condition_2}={b2}" > {dir_out}/MAJIQ/config'
+    'echo "[info]\nbamdirs={bamdirs}\ngenome={fa}\nstrandness={strandness}\n[experiments]\n{basics$condition_1}={b1}\n{basics$condition_2}={b2}" > {dir_out}/MAJIQ/config'
   )
   if (!all(is.na(bams_exception))) {
     cmds[["generating config"]] <- glue::glue(
-      'echo "[info]\nbamdirs={bamdirs}\\
-      \ngenome={fa}\nstrandness={strandness}\n\\
-      [experiments]\n{basics$condition_1}={b1}\n{basics$condition_2}={b2}\n\\
-      [optional]\n{optional}" > {dir_out}/MAJIQ/config'
+      'echo "[info]\nbamdirs={bamdirs}\ngenome={fa}\nstrandness={strandness}\n[experiments]\n{basics$condition_1}={b1}\n{basics$condition_2}={b2}\n[optional]\n{optional}" > {dir_out}/MAJIQ/config'
     )
   }
 
@@ -482,6 +477,8 @@ spladder <- function(
 #'     These are obtained from \code{\linkS4class{ASP}} object.
 #' @param infer_prior Default is TRUE.
 #' @param max_genes_per_group Default is 50.
+#' @param libpaths Default is "". If not NULL, should be like this:
+#'     c("~/doc/Rlibrary/", "~/doc/Rlibrary4/")
 #' @param ... nothing
 #' @importFrom glue glue
 #' @importFrom utils write.table
@@ -490,13 +487,16 @@ spladder <- function(
 #' @return A list containing BANDITS workflow.
 bandits <- function(
   dir_out, sampletable, basics, nproc, conda_path, conda_env, write_log, tx2gene,
-  infer_prior = T, max_genes_per_group = 50, ...
+  infer_prior = T, max_genes_per_group = 50, libpaths = "", ...
 ) {
   myCreatedir(glue::glue("{dir_out}/BANDITS/"))
-  write.table(sampletable, glue::glue("{dir_out}/BANDITS/sampleTable.txt"), quote = F, sep = "\t", row.names = F)
+  utils::write.table(sampletable, glue::glue("{dir_out}/BANDITS/sampleTable.txt"), quote = F, sep = "\t", row.names = F)
+  utils::write.table(tx2gene, glue::glue("{dir_out}/BANDITS/tx2gene.txt"), quote = F, sep = "\t", row.names = F)
   cmds <- list()
   rscript <- glue::glue(
     '
+    if ("{{libpaths}}" != "") .libPaths(unlist(strsplit("{{paste(libpaths, collapse = ",")}}", split = ",")))
+
     library(BANDITS)
     library(tximport)
     library(dplyr)
@@ -506,7 +506,7 @@ bandits <- function(
     max_genes_per_group <- {{max_genes_per_group}}
 
 
-    tx2gene <- read.delim("{{tx2gene}}", header = F) # |> setNames(c("gene_id", "transcript_id"))
+    tx2gene <- read.delim("{{dir_out}}/BANDITS/tx2gene.txt")
 
     sampleTable <- read.delim("{{dir_out}}/BANDITS/sampleTable.txt")
     samples_design <- sampleTable |>
@@ -517,7 +517,7 @@ bandits <- function(
       setNames(samples_design$sample_id)
     for (s in names(quant_files)) {
       quant_files[s] <- list.files(
-        glue("{sampleTable$dirs_salmon[sampleTable$samples == s]}/"),
+        sampleTable$dirs_salmon[sampleTable$samples == s],
         pattern = "quant.sf*",
         full.names = T
       )
@@ -570,20 +570,13 @@ bandits <- function(
     results_gene <- top_genes(results)
     results_transcript <- top_transcripts(results)
 
-    write.table(
-      results_gene, "{{dir_out}}/BANDITS/results_gene.txt",
-      row.names = F, sep = "\\t", quote = F
-    )
-    write.table(
-      results_transcript, "{{dir_out}}/BANDITS/results_transcript.txt",
-      row.names = F, sep = "\\t", quote = F
-    )
+    write.table(results_gene, "{{dir_out}}/BANDITS/results_gene.txt", row.names = F, sep = "\\t", quote = F)
+    write.table(results_transcript, "{{dir_out}}/BANDITS/results_transcript.txt", row.names = F, sep = "\\t", quote = F)
     save.image("{{dir_out}}/BANDITS/bandits.RData", compress = T)
-  ',
-  .open = "{{", .close = "}}"
-)
+    ', .open = "{{", .close = "}}"
+  )
 
-  cmds[["generating the bandits rscript"]] <- glue::glue("echo '{rscript}' | sed 's/..//' > {dir_out}/BANDITS/BANDITS.R")
+  cmds[["generating the bandits rscript"]] <- glue::glue("echo '{rscript}' > {dir_out}/BANDITS/BANDITS.R")
   cmds[["running bandits"]] <- glue::glue("Rscript {dir_out}/BANDITS/BANDITS.R")
   if (!is.null(conda_env) && !is.na(conda_env)) cmds[["running bandits"]] <- paste(glue::glue("source {conda_path}/bin/activate {conda_env} &&"), cmds[["running bandits"]])
   if (write_log) cmds[["running bandits"]] <- paste(cmds[["running bandits"]], glue::glue("1>{dir_out}/BANDITS/_log 2>&1"))
@@ -631,15 +624,23 @@ suppa <- function(
 
   # ioe_suppa <- vector("character", length = length(events))
   # names(ioe_suppa) <- events
-  patterns <- glue::glue(".*{event}.*\\.ioe") |>
+  patterns <- glue::glue(".*{events}.*\\.ioe") |>
     as.character() |>
-    setNames(event)
+    setNames(events)
   ioe_suppa <- findReadFiles(types_all = events, types_event = "all", dir = dir_events, patterns = patterns)
   # for (e in events) ioe_suppa[e] <- list.files(dir_events, pattern = glue::glue(".*{e}.*\\.ioe"), full.names = T)
-  files_tpm <- c(basics$salmons_1, basics$salmons_2)
+  files_tpm <- vector("character", length = length(c(basics$samples_1, basics$samples_2))) |>
+    stats::setNames(c(basics$samples_1, basics$samples_2))
+  for (nm in names(files_tpm)) {
+    files_tpm[nm] <- list.files(
+      c(basics$salmons_1, basics$salmons_2)[nm], pattern = "quant.sf", full.names = T
+    )
+  }
+  # glue::glue("{c(basics$salmons_1, basics$salmons_2)}/")
   txi <- tximport::tximport(files_tpm, type = "salmon", txOut = T)
   tpm_1 <- txi$abundance[, basics$samples_1]
   tpm_2 <- txi$abundance[, basics$samples_2]
+  myCreatedir(glue("{dir_out}/SUPPA/tpm/"))
   utils::write.table(tpm_1, glue::glue("{dir_out}/SUPPA/tpm/{basics$condition_1}.tpm"), quote = F, sep = "\t")
   utils::write.table(tpm_2, glue::glue("{dir_out}/SUPPA/tpm/{basics$condition_2}.tpm"), quote = F, sep = "\t")
 
@@ -702,7 +703,9 @@ suppa <- function(
 #' @param prefix_miso No default. The prefix of MISO event files.
 #' @param anno_vast The directory holding VAST-TOOLS event files.
 #' @param prefix_vast No default. The prefix of VAST-TOOLS event files.
-#' @param types_miso Should be like this: "SE,MXE,A5SS,A3SS,RI".
+#' @param types_miso Should be like this: c("SE", "MXE", "A5SS", "A3SS", "RI").
+#' @param libpaths Default is "". If not NULL, should be like this:
+#'     c("~/doc/Rlibrary/", "~/doc/Rlibrary4/")
 #' @param ... nothing
 #' @importFrom glue glue
 #' @importFrom utils write.table
@@ -711,9 +714,9 @@ suppa <- function(
 #' @return A list containing psichomics workflow.
 psichomics <- function(
   dir_out, basics, sampletable, conda_path, conda_env, novel, write_log,
-  anno_suppa = NULL, anno_rmats = NULL, anno_miso = NULL, anno_vast = NULL,
-  prefix_suppa = NULL, prefix_miso = NULL, prefix_vast = NULL, types_miso = NULL,
-  ...
+  anno_suppa = "", anno_rmats = "", anno_miso = "", anno_vast = "",
+  prefix_suppa = "", prefix_miso = "", prefix_vast = "", types_miso = "",
+  libpaths = "", ...
 ) {
   myCreatedir(glue::glue("{dir_out}/psichomics/"))
   utils::write.table(
@@ -721,41 +724,48 @@ psichomics <- function(
     quote = F, sep = "\t", row.names = F
   )
   cmds <- list()
+
+
   rscript <- glue::glue(
     '
+    if ("{{libpaths}}" != "") .libPaths(unlist(strsplit("{{paste(libpaths, collapse = ",")}}", split = ",")))
+
     library(psichomics)
+    library(dplyr)
 
-    anno_suppa <- {{anno_suppa}}
-    anno_rmats <- {{anno_rmats}}
-    anno_miso <- {{anno_miso}}
-    anno_vast <- {{anno_vast}}
-    prefix_suppa <- {{prefix_suppa}}
-    prefix_miso <- {{prefix_miso}}
-    prefix_vast <- {{prefix_vast}}
-    types_miso <- {{unlist(strsplit(types_miso, split = ","))}}
+    anno_suppa <- "{{anno_suppa}}"
+    anno_rmats <- "{{anno_rmats}}"
+    anno_miso <- "{{anno_miso}}"
+    anno_vast <- "{{anno_vast}}"
+    prefix_suppa <- "{{prefix_suppa}}"
+    prefix_miso <- "{{prefix_miso}}"
+    prefix_vast <- "{{prefix_vast}}"
+    types_miso <- "{{paste(types_miso, collapse = ",")}}"
 
-    sampleTable <- read.delim("{dir_out}/psichomics/sampleTable.txt")
+    sampleTable <- read.delim("{{dir_out}}/psichomics/sampleTable.txt")
 
-    strandedness <- {{basics$strandedness_most}}
+    strandedness <- "{{basics$strandedness_most}}"
     if (strandedness == "no") sn <- "unstranded"
     if (strandedness == "yes") sn <- "stranded"
     if (strandedness == "reverse") sn <- "stranded (reverse)"
 
-    files_genequant <- {{c(basics$quants_star_1, basic$quants_star_2)}}
-    files_junctionquant <- {{c(basics$juncs_star_1, basics$juncs_star_2)}}
+    files_genequant <- unlist(strsplit("{{paste(c(basics$quants_star_1, basics$quants_star_2), collapse = ",")}}", split = ",")) |>
+      setNames(unlist(strsplit("{{paste(c(basics$samples_1, basics$samples_2), collapse = ",")}}", split = ",")))
+    files_junctionquant <- unlist(strsplit("{{paste(c(basics$juncs_star_1, basics$juncs_star_2), collapse = ",")}}", split = ",")) |>
+      setNames(unlist(strsplit("{{paste(c(basics$samples_1, basics$samples_2), collapse = ",")}}", split = ",")))
 
-    if (!is.null(anno_suppa) && !is.null(prefix_suppa)) {
+    if (anno_suppa != "" && prefix_suppa != "") {
       suppa <- parseSuppaAnnotation(anno_suppa, genome = prefix_suppa)
-    } else {suppa <- NULL}
-    if (!is.null(anno_rmats)) {
+    } else {suppa <- data.frame()}
+    if (anno_rmats != "") {
       mats <- parseMatsAnnotation(anno_rmats, novelEvents = {{novel}})
-    } else {mats <- NULL}
-    if (!is.null(anno_miso) && !is.null(prefix_miso)) {
-      miso <- parseMisoAnnotation(anno_miso, genome = prefix_miso, types = types_miso)
-    } else {miso <- NULL}
-    if (!is.null(anno_vast) && !is.null(prefix_vast)) {
+    } else {mats <- data.frame()}
+    if (anno_miso != "" && prefix_miso != "") {
+      miso <- parseMisoAnnotation(anno_miso, genome = prefix_miso, types = unlist(strsplit(types_miso, split = ",")))
+    } else {miso <- data.frame()}
+    if (anno_vast != "" && prefix_vast != "") {
       vast <- parseVastToolsAnnotation(anno_vast, genome = prefix_vast)
-    } else {vast <- NULL}
+    } else {vast <- data.frame()}
     annot <- prepareAnnotationFromEvents(suppa, vast, mats, miso)
     saveRDS(annot, file = "{{dir_out}}/psichomics/annot.rds")
 
@@ -769,7 +779,7 @@ psichomics <- function(
     write.table(
       dplyr::select(sampleTable, samples, conditions) |> dplyr::rename(`Sample ID` = samples),
       "{{dir_out}}/psichomics/psichomics_metadata.txt",
-      sep = "\t", quote = F, row.names = F
+      sep = "\\t", quote = F, row.names = F
     )
 
     data <- loadLocalFiles("{{dir_out}}/psichomics/")
@@ -785,24 +795,18 @@ psichomics <- function(
     psi <- quantifySplicing(annot, junctionQuant)
 
     s1VSs2 <- list(
-      sampleTable$samples[sampleTable$conditions == {basics$condition_1}],
-      sampleTable$samples[sampleTable$conditions == {basics$condition_2}]
+      sampleTable$samples[sampleTable$conditions == "{{basics$condition_1}}"],
+      sampleTable$samples[sampleTable$conditions == "{{basics$condition_2}}"]
     ) |>
     setNames(unique(sampleTable$conditions))
     diffSplicing <- diffAnalyses(psi, s1VSs2)
-    write.table(
-      diffSplicing, "{{dir_out}}/psichomics/results_tmp.txt",
-      quote = F, sep = "\t"
-    )
-    write.table(
-      psi, "{{dir_out}}/psichomics/psi.txt",
-      quote = F, sep = "\t"
-    )
+    write.table(diffSplicing, "{{dir_out}}/psichomics/results_tmp.txt", quote = F, sep = "\\t")
+    write.table(psi, "{{dir_out}}/psichomics/psi.txt", quote = F, sep = "\\t")
     save.image("{{dir_out}}/psichomics/psichomics.RData", compress = T)
     ', .open = "{{", .close = "}}"
   )
 
-  cmds[["generating the psichomics rscript"]] <- glue::glue('echo "{rscript}" > {dir_out}/psichomics/psichomics.R')
+  cmds[["generating the psichomics rscript"]] <- glue::glue("echo '{rscript}' > {dir_out}/psichomics/psichomics.R")
   cmds[["running psichomics"]] <- glue::glue("Rscript {dir_out}/psichomics/psichomics.R")
   cmds[["tidying output"]] <- glue::glue("awk '{if(NR==1){print \"\t\"$0}else{print $0}}' {{dir_out}}/psichomics/results_tmp.txt > {{dir_out}}/psichomics/results.txt", .open = "{{", .close = "}}")
   if (!is.null(conda_env) && !is.na(conda_env)) cmds[["running psichomics"]] <- paste(glue::glue("source {conda_path}/bin/activate {conda_env} &&"), cmds[["running psichomics"]])

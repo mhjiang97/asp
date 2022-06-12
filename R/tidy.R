@@ -370,7 +370,7 @@ read_bandits <- function(asp) {
 #' @importFrom glue glue
 #' @importFrom dplyr mutate case_when bind_rows left_join
 #' @importFrom tibble rownames_to_column as_tibble
-#' @importFrom tidyr separate
+#' @importFrom tidyr separate drop_na
 #' @importFrom utils read.delim
 #' @importFrom stats setNames
 read_suppa <- function(asp) {
@@ -414,7 +414,8 @@ read_suppa <- function(asp) {
 
   suppa <- dplyr::bind_rows(list_suppa) |>
     dplyr::left_join(asp@tx2gene_convert, by = "gene_id") |>
-    dplyr::mutate(myID = coord)
+    dplyr::mutate(myID = coord) |>
+    tidyr::drop_na(dpsi)
 
   suppa
 }

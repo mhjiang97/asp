@@ -10,10 +10,20 @@ Minghao Jiang, [jiangminghao1001\@163.com](mailto:jiangminghao1001@163.com)
 
 ## Table of Contents
 
+> -   [Features](#Features)  
 > -   [Dependencies](#Dependencies)  
 > -   [Installation](#Installation)  
 > -   [Vignette](#Vignette)  
 > -   [License](#License)
+
+## Features
+
+1.  [x] Bundle eight tested workflows together.
+2.  [x] Incorporate a new S4 object `ASP` to generate reproducible commands and to read results of each workflow easily.
+3.  [x] Multi sessions are adopted to run each workflow in parallel.
+4.  [x] Tidy results of each workflow with uniform nomenclature (*i.e.,* headers and types of AS events).
+5.  [x] Intersections of results from each workflow can be queried and visualized easily.
+6.  [x] The tracks of each result can be plotted to check easily.
 
 ## Dependencies
 
