@@ -6,8 +6,6 @@
 
 Minghao Jiang, [jiangminghao1001\@163.com](mailto:jiangminghao1001@163.com)
 
-------------------------------------------------------------------------
-
 ## Table of Contents
 
 > -   [Features](#Features)  
@@ -15,6 +13,8 @@ Minghao Jiang, [jiangminghao1001\@163.com](mailto:jiangminghao1001@163.com)
 > -   [Installation](#Installation)  
 > -   [Vignette](#Vignette)  
 > -   [License](#License)
+
+------------------------------------------------------------------------
 
 ## Features
 
