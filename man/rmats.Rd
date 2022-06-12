@@ -9,7 +9,7 @@ rmats(
   basics,
   nproc,
   gtf,
-  novel,
+  novel_ss,
   conda_path,
   conda_env,
   write_log,
@@ -21,7 +21,7 @@ rmats(
 )
 }
 \arguments{
-\item{dir_out, basics, nproc, gtf, novel, conda_path, conda_env, write_log}{These are obtained from \code{\linkS4class{ASP}} object.}
+\item{dir_out, basics, nproc, gtf, novel_ss, conda_path, conda_env, write_log}{These are obtained from \code{\linkS4class{ASP}} object.}
 
 \item{variable_read_length}{Default is FALSE.}
 

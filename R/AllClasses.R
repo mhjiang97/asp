@@ -36,10 +36,11 @@
 #' @slot dir_out character. The parent directory for all the next procedures.
 #'     Default is "./".
 #' @slot nproc integer. The number of threads. Default is 5.
-#' @slot novel boolean. If detect novel splicing or not. Default is FALSE.
-#' @slot write_log boolean. If write the stdout and stderr to a log file
+#' @slot novel boolean. If to detect novel splicing or not. Default is FALSE.
+#' @slot novel_ss boolean. If to detect novel splice site or not. Default is FALSE.
+#' @slot write_log boolean. If to write the stdout and stderr to a log file
 #'     beginning with an underscore. Default is TRUE.
-#' @slot parallel boolean. If run different tools or multiple samples
+#' @slot parallel boolean. If to run different tools or multiple samples
 #'     in parallel. Default is TRUE.
 #' @slot np integer. How many samples will be processed at the same time.
 #'     Default is 5.
@@ -244,7 +245,7 @@ create_asp <- function(...) {
 #' @param tx2gene,dir_out,nproc,gtf,gff,fa These are same as the flags in
 #'     \code{\linkS4class{ASP}}, if you want to change any of them, then
 #'     provide a new one.
-#' @param parallel,np,basics,sampletable,novel,conda_path,write_log
+#' @param parallel,np,basics,sampletable,novel,novel_ss,conda_path,write_log
 #'     These are same
 #'     as the flags in \code{\linkS4class{ASP}}, if you want to change any of
 #'     them, then provide a new one.
@@ -317,7 +318,7 @@ cmd_asp <- function(
       dplyr::select(gene_id, gene_symbol)
   }
   if (is.null(novel)) novel <- asp@novel
-  if (is.null(novel_ss)) novel <- asp@novel_ss
+  if (is.null(novel_ss)) novel_ss <- asp@novel_ss
   if (is.null(conda_path)) conda_path <- asp@conda_path
   if (is.null(write_log)) write_log <- asp@write_log
   asp@parameters <- list(...)
@@ -769,21 +770,27 @@ intersect_asp <- function(asp, tools = "all", type = "all") {
 #'     stored in your \code{\linkS4class{ASP}} object.
 #' @param type One of "SE", "MXE", "A3SS", "A5SS", "RI", "SME", "ALE" and "AFE".
 #'     Or use "all" to use the intersections of all AS types.
+#' @param venn Default is TRUE. If to plot a venn diagram.
+#' @param upset Default is TRUE. If to plot an upset diagram.
 #' @importFrom dplyr select
 #' @importFrom yyplot ggvenn
-#' @importFrom ggplot2 guides theme element_blank theme_void
-#' @importFrom ggsci scale_fill_npg
+#' @importFrom ggplot2 guides theme element_blank theme_void scale_fill_manual
+#' @importFrom ggsci pal_npg
 #' @importFrom tibble column_to_rownames as_tibble rownames_to_column
 #' @importFrom UpSetR upset
 #' @importFrom ggplotify as.ggplot
 #' @importFrom ggimage geom_subview
+#' @importFrom stats setNames
 #' @export
 #' @return A ggplot object.
 #' @examples
 #' \dontrun{
 #' venn_upset_asp(asp)
 #' }
-venn_upset_asp <- function(asp, tools = "all", type = "all") {
+venn_upset_asp <- function(asp, tools = "all", type = "all", venn = T, upset = T) {
+  mypalette <- ggsci::pal_npg()(8) |>
+    stats::setNames(c("rmats", "cash", "leafcutter", "bandits", "majiq", "psichomics", "suppa", "spladder"))
+
   dat_ds_gene <- asp@intersection[[type]] |>
     dplyr::select(!c(frequency, frequency_unique)) |>
     tibble::column_to_rownames("gene")
@@ -793,9 +800,9 @@ venn_upset_asp <- function(asp, tools = "all", type = "all") {
   }
   dat_ds_gene[dat_ds_gene != 0] <- 1
 
-  if (T) {
+  if (venn) {
     yyplot::ggvenn(dat_ds_gene, alpha = 0.7) + ggplot2::guides(fill = "none") +
-      ggsci::scale_fill_npg() +
+      ggplot2::scale_fill_manual(values = mypalette) +
       ggplot2::theme(
         panel.border = ggplot2::element_blank(),
         axis.title.x = ggplot2::element_blank(),
@@ -809,22 +816,26 @@ venn_upset_asp <- function(asp, tools = "all", type = "all") {
       ) -> p1
   } else {p1 <- NULL}
 
-  if (T) {
+  if (upset) {
     UpSetR::upset(
       as.data.frame(dat_ds_gene),
       order.by = "freq", matrix.color = "#87CEFA", nsets = ncol(dat_ds_gene), nintersects = NA,
-      main.bar.color = "#424242",
+      main.bar.color = "#424242", sets.bar.color = mypalette[colnames(dat_ds_gene)],
       mainbar.y.label = "AS gene intersection", sets.x.label = "number of AS gene",
       point.size = 1.25, line.size = 0.6, mb.ratio = c(0.7, 0.3),
       att.pos = "top", shade.color = "black",
       shade.alpha = 0.1, matrix.dot.alpha = 0.5, text.scale = 0.8
-    ) |>
-      ggplotify::as.ggplot() -> p2
+    ) -> p2
   } else {p2 <- NULL}
 
-  p <- p2 + ggimage::geom_subview(
-    subview = p1 + ggplot2::theme_void(), x = .75, y = .7, w = .5, h = .5,
-  )
+
+  if (venn && upset) {
+    p <- ggplotify::as.ggplot(p2) + ggimage::geom_subview(
+      subview = p1 + ggplot2::theme_void(), x = .75, y = .7, w = .5, h = .5,
+    )
+  }
+  if (venn && !upset) p <- p1
+  if (upset && !venn) p <- p2
 
   p
 }

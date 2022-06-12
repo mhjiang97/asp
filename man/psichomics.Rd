@@ -12,14 +12,15 @@ psichomics(
   conda_env,
   novel,
   write_log,
-  anno_suppa = NULL,
-  anno_rmats = NULL,
-  anno_miso = NULL,
-  anno_vast = NULL,
-  prefix_suppa = NULL,
-  prefix_miso = NULL,
-  prefix_vast = NULL,
-  types_miso = NULL,
+  anno_suppa = "",
+  anno_rmats = "",
+  anno_miso = "",
+  anno_vast = "",
+  prefix_suppa = "",
+  prefix_miso = "",
+  prefix_vast = "",
+  types_miso = "",
+  libpaths = "",
   ...
 )
 }
@@ -40,7 +41,10 @@ psichomics(
 
 \item{prefix_vast}{No default. The prefix of VAST-TOOLS event files.}
 
-\item{types_miso}{Should be like this: "SE,MXE,A5SS,A3SS,RI".}
+\item{types_miso}{Should be like this: c("SE", "MXE", "A5SS", "A3SS", "RI").}
+
+\item{libpaths}{Default is "". If not NULL, should be like this:
+c("~/doc/Rlibrary/", "~/doc/Rlibrary4/")}
 
 \item{...}{nothing}
 }

@@ -15,6 +15,7 @@ bandits(
   tx2gene,
   infer_prior = T,
   max_genes_per_group = 50,
+  libpaths = "",
   ...
 )
 }
@@ -24,6 +25,9 @@ bandits(
 \item{infer_prior}{Default is TRUE.}
 
 \item{max_genes_per_group}{Default is 50.}
+
+\item{libpaths}{Default is "". If not NULL, should be like this:
+c("~/doc/Rlibrary/", "~/doc/Rlibrary4/")}
 
 \item{...}{nothing}
 }

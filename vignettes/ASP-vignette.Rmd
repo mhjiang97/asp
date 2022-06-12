@@ -64,7 +64,8 @@ print(sampleTable)
 
 # ASP object creation
 
-The *tx2gene* flag can be overlooked, and the *gtf* will be used to generate a *tx2gene* dataframe.
+The *tx2gene* flag can be overlooked, and the *gtf* will be used to generate a
+*tx2gene* dataframe.
 
 ```{r}
 asp <- create_asp(
@@ -91,10 +92,12 @@ asp <- cmd_asp(
 
 Multiple workflows can be generated together.
 
-```{r}
+```{r quickStart, eval = FALSE}
 asp <- cmd_asp(
   asp = asp, conda_env = c(NA, "assw_3.8"), tool = c("cash", "leafcutter"),
+  ##### CASH #####
   cash_jar = "~/bin/cash.jar", MergePval = "G", ram = "100g",
+  ##### LeafCutter #####
   leafcutter_dir = "~/bin/leafcutter/"
 )
 ```
@@ -166,10 +169,12 @@ Intersect the significant differential AS genes expediently.
 asp <- intersect_asp(asp)
 pander::pandoc.table(asp@intersection$all[1:5, ])
 ```
+
 A venn plot and a upset plot can be used to visualize the intersection.
+We set venn to FALSE this time. Of course, You can set it to TRUE, and a venn diagram will be added to the top right.
 
 ```{r fig.height = 7, fig.width = 8}
-venn_upset_asp(asp)
+venn_upset_asp(asp, venn = F)
 ```
 
 # Significant differential alternative splicing events visualization
@@ -183,7 +188,7 @@ asp <- plot_pre_asp(
 plot_asp(asp, tool = "rmats", i = 1)
 ```
 
----
+--------------------------------------------------------------------------------
 
 # Session Information
 

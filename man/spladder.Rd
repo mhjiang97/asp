@@ -9,15 +9,18 @@ spladder(
   basics,
   gtf,
   novel,
+  novel_ss,
   conda_path,
   conda_env,
   write_log,
+  parallel,
+  np,
   confidence_level = 3,
   ...
 )
 }
 \arguments{
-\item{dir_out, basics, gtf, novel, conda_path, conda_env, write_log}{These are obtained from \code{\linkS4class{ASP}} object.}
+\item{dir_out, basics, gtf, novel, novel_ss, parallel, np, conda_path, conda_env, write_log}{These are obtained from \code{\linkS4class{ASP}} object.}
 
 \item{confidence_level}{Default is 3.}
 

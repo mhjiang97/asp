@@ -2,7 +2,7 @@
 #' @description Generating commands of rMATS workflow.
 #' @name rmats
 #' @aliases rmats
-#' @param dir_out,basics,nproc,gtf,novel,conda_path,conda_env,write_log
+#' @param dir_out,basics,nproc,gtf,novel_ss,conda_path,conda_env,write_log
 #'     These are obtained from \code{\linkS4class{ASP}} object.
 #' @param variable_read_length Default is FALSE.
 #' @param paired_stats Default is FALSE.
@@ -340,7 +340,8 @@ leafcutter <- function(
 #' @description Generating commands of SplAdder workflow.
 #' @name spladder
 #' @aliases spladder
-#' @param dir_out,basics,gtf,novel,conda_path,conda_env,write_log
+#' @param
+#' dir_out,basics,gtf,novel,novel_ss,parallel,np,conda_path,conda_env,write_log
 #'     These are obtained from \code{\linkS4class{ASP}} object.
 #' @param confidence_level Default is 3.
 #' @param ... nothing
