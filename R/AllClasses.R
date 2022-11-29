@@ -411,6 +411,13 @@ cmd_asp <- function(
       novel = novel, write_log = write_log, ...
     )
   }
+  if ("darts" %in% tool) {
+    asp@cmds[["darts"]] <- darts(
+      dir_out = dir_out, basics = basics, nproc = nproc, parallel = parallel,
+      tx2gene = tx2gene, conda_path = conda_path["darts"], conda_env = conda_env["darts"],
+      write_log = write_log, ...
+    )
+  }
 
   asp
 }
@@ -472,7 +479,8 @@ run_asp <- function(asp, tool, run = T, read_results = T, parallel = T, block = 
     "spladder" = read_spladder,
     "bandits" = read_bandits,
     "suppa" = read_suppa,
-    "psichomics" = read_psichomics
+    "psichomics" = read_psichomics,
+    "darts" = read_darts
   )
   mydirs <- list(
     "rmats" = "",
@@ -482,7 +490,8 @@ run_asp <- function(asp, tool, run = T, read_results = T, parallel = T, block = 
     "spladder" = c("spladder", "tmp"),
     "bandits" = "",
     "suppa" = c("tpm", "psi", "ds"),
-    "psichomics" = ""
+    "psichomics" = "",
+    "darts" = c("BHT", "DNN", "BHT_DNN")
   )
 
   f <- vector("list", length = length(tool)) |> stats::setNames(tool)

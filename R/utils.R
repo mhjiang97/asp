@@ -151,27 +151,27 @@ getBasics <- function(sampletable) {
   quants_star_2 <- files_star_quant[samples_2] |>
     stats::setNames(samples_2)
 
-  files_tophat_junc <- vector("character", length = nrow(sampletable)) |>
-    stats::setNames(sampletable$samples)
-  for (s in names(files_tophat_junc)) {
-    if (is.null(sampletable$files_bam_tophat[sampletable$samples == s])) {
-      files_tophat_junc[s] <- ""
-    } else {
-      tmp_tophat_junc <- list.files(
-        dirname(sampletable$files_bam_tophat[sampletable$samples == s]),
-        pattern = "junctions.bed", full.names = T
-      )
-      if (all(is.na(tmp_tophat_junc))) {
-        files_tophat_junc[s] <- ""
-      } else {
-        files_tophat_junc[s] <- tmp_tophat_junc
-      }
-    }
-  }
-  juncs_tophat_1 <- files_tophat_junc[samples_1] |>
-    stats::setNames(samples_1)
-  juncs_tophat_2 <- files_tophat_junc[samples_2] |>
-    stats::setNames(samples_2)
+  # files_tophat_junc <- vector("character", length = nrow(sampletable)) |>
+  #   stats::setNames(sampletable$samples)
+  # for (s in names(files_tophat_junc)) {
+  #   if (is.null(sampletable$files_bam_tophat[sampletable$samples == s])) {
+  #     files_tophat_junc[s] <- ""
+  #   } else {
+  #     tmp_tophat_junc <- list.files(
+  #       dirname(sampletable$files_bam_tophat[sampletable$samples == s]),
+  #       pattern = "junctions.bed", full.names = T
+  #     )
+  #     if (all(is.na(tmp_tophat_junc))) {
+  #       files_tophat_junc[s] <- ""
+  #     } else {
+  #       files_tophat_junc[s] <- tmp_tophat_junc
+  #     }
+  #   }
+  # }
+  # juncs_tophat_1 <- files_tophat_junc[samples_1] |>
+  #   stats::setNames(samples_1)
+  # juncs_tophat_2 <- files_tophat_junc[samples_2] |>
+  #   stats::setNames(samples_2)
 
   library_type_most <- table(sampletable$library_types) %>% .[. == max(.)] |> names()
   read_length_most <- table(sampletable$read_lengths) %>% .[. == max(.)] |> names() |> as.numeric()
@@ -186,7 +186,7 @@ getBasics <- function(sampletable) {
     fqs_R1_2, fqs_R2_2,
     juncs_star_1, juncs_star_2,
     quants_star_1, quants_star_2,
-    juncs_tophat_1, juncs_tophat_2,
+    # juncs_tophat_1, juncs_tophat_2,
     library_type_most, read_length_most, strandedness_most
   ) |>
     stats::setNames(
@@ -194,7 +194,7 @@ getBasics <- function(sampletable) {
         "condition_1", "condition_2", "samples_1", "samples_2", "bams_1", "bams_2",
         "salmons_1", "salmons_2", "fqs_R1_1", "fqs_R2_1", "fqs_R1_2", "fqs_R2_2",
         "juncs_star_1", "juncs_star_2", "quants_star_1", "quants_star_2",
-        "juncs_tophat_1", "juncs_tophat_2",
+        # "juncs_tophat_1", "juncs_tophat_2",
         "library_type_most", "read_length_most", "strandedness_most"
       )
     )

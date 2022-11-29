@@ -36,6 +36,7 @@ Minghao Jiang, [jiangminghao1001@163.com](mailto:jiangminghao1001@163.com)
     -   [BANDITS](https://bioconductor.org/packages/release/bioc/html/BANDITS.html), an R package.
     -   [SUPPA](https://github.com/comprna/SUPPA), please make `suppa.py` executable.
     -   [psichomics](https://bioconductor.org/packages/release/bioc/html/psichomics.html), an R package.
+    -   [DARTS](https://github.com/Xinglab/DARTS), please make `Darts_BHT` and `Darts_DNN` executable.
 -   [Conda](https://anaconda.org/anaconda/conda)
     -   Different tools can rely on different Conda environments.
     -   Different tools can rely on different Conda or virtual environments.

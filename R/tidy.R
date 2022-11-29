@@ -454,6 +454,41 @@ read_psichomics <- function(asp) {
   psichomics
 }
 
+#' @importFrom glue glue
+#' @importFrom dplyr rename mutate case_when left_join select bind_rows
+#' @importFrom openxlsx read.xlsx
+read_darts <- function(asp) {
+  file <- glue::glue("{asp@dir_out}/DARTS/BHT/Darts_BHT.results.xlsx")
+  types_all <- c("SE", "A3SS", "A5SS", "RI")
+  event_type <- "all"
+  if (event_type == "all") {
+    et <- types_all
+  } else {
+    et <- intersect(types_all, event_type)
+  }
+
+  list_darts <- vector("list", length(et)) |>
+    setNames(et)
+  for (e in names(list_darts)) {
+    list_darts[[e]] <- file |>
+      openxlsx::read.xlsx(
+        na.strings = c("nan", "NaN"), sheet = glue("{e}-{read_type[1]}")
+      ) |>
+      dplyr::mutate(
+        as_type = e, padj = 1 - as.numeric(Posterior)
+      ) |>
+      dplyr::rename(
+        dpsi = IncLevelDiff, gene_id = GeneID, gene_symbol = geneSymbol,
+        psis_1 = PSI1, psis_2 = PSI2
+      ) |>
+      tibble::as_tibble()
+  }
+
+  darts <- dplyr::bind_rows(list_darts)
+
+  darts
+}
+
 
 
 

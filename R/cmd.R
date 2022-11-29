@@ -816,6 +816,133 @@ psichomics <- function(
   cmds
 }
 
+#' DARTS
+#' @description Generating commands of DARTS workflow.
+#' @name darts
+#' @aliases darts
+#' @param
+#' dir_out,basics,parallel,np,conda_path,conda_env,write_log
+#'     These are obtained from \code{\linkS4class{ASP}} object.
+#' @param rmats_dir rMATS output directory.
+#' @param cstat Default is 0.05.
+#' @param ... nothing
+#' @importFrom glue glue
+#' @references \url{https://github.com/Xinglab/DARTS}.
+#' @return A list containing DARTS workflow.
+darts <- function(
+  dir_out, basics, nproc, conda_path, conda_env, write_log, parallel, tx2gene,
+  rmats_dir = NA, cstat = 0.05, ...
+) {
+  rmats_count <- vector("character", length = 4) |>
+    setNames(c("SE", "RI", "A3SS", "A5SS"))
+  for (n in names(rmats_count)) {
+    rmats_count[[n]] <- list.files(
+      rmats_dir, pattern = glue("JC.raw.input.{n}.txt"), full.names = T
+    )
+  }
+  rmats_anno <- vector("character", length = 4) |>
+    setNames(c("SE", "RI", "A3SS", "A5SS"))
+  for (n in names(rmats_anno)) {
+    rmats_anno[[n]] <- list.files(
+      rmats_dir, pattern = glue("fromGTF.{n}.txt"), full.names = T
+    )
+  }
+
+  files_tpm <- vector("character", length = length(c(basics$samples_1, basics$samples_2))) |>
+    stats::setNames(c(basics$samples_1, basics$samples_2))
+  for (nm in names(files_tpm)) {
+    files_tpm[nm] <- list.files(
+      c(basics$salmons_1, basics$salmons_2)[nm], pattern = "quant.sf", full.names = T
+    )
+  }
+  txi <- tximport(
+    files_tpm, type = "salmon", tx2gene = tx2gene[, c("transcript_id", "gene_symbol")]
+  )
+  tpm_1 <- txi$abundance[, basics$samples_1]
+  tpm_2 <- txi$abundance[, basics$samples_2]
+
+  tpm_1 <- as.data.frame(tpm_1) |>
+    dplyr::rowwise() |>
+    dplyr::mutate(
+      mean = mean(.data[basics$samples_1], na.rm = T)
+    ) |>
+    dplyr::ungroup() |>
+    as.data.frame()
+  rownames(tpm_1) <- rownames(txi$abundance)
+  tpm_2 <- as.data.frame(tpm_2) |>
+    dplyr::rowwise() |>
+    dplyr::mutate(
+      mean = mean(.data[basics$samples_2], na.rm = T)
+    ) |>
+    dplyr::ungroup() |>
+    as.data.frame()
+  rownames(tpm_2) <- rownames(txi$abundance)
+  tpm_mean <- data.frame(row.names = rownames(tpm_1), condition_1 = tpm_1$mean, condition_2 = tpm_2$mean)
+
+  rbp <- read.delim(system.file("extdata", "rbp_gene_list.txt", package = "asp"), header = F)
+
+  tpm_final <- data.frame(row.names = rbp[, 2])
+  tpm_final$s1 <- tpm_mean$condition_1[match(rownames(tpm_final), rownames(tpm_mean))]
+  tpm_final$s2 <- tpm_mean$condition_2[match(rownames(tpm_final), rownames(tpm_mean))]
+  tpm_final[is.na(tpm_final)] <- 0
+  write.table(
+    tpm_final, glue("{dir_out}/DARTS/DNN/RBP_tpm.txt"),
+    row.names = T, col.names = T, quote = F, sep = "\t"
+  )
+
+  cmds <- list()
+
+  cmds[["BHT flat"]] <- glue(
+    "Darts_BHT bayes_infer \\
+    --rmats-count {rmats_count[c('SE', 'RI', 'A3SS', 'A5SS')]} \\
+    --od {rep(dir_out, 4)}/DARTS/BHT/ \\
+    --annot {rmats_anno[c('SE', 'RI', 'A3SS', 'A5SS')]} \\
+    -c {rep(cstat, 4)} \\
+    --replicate-model unpaired \\
+    --nthread {rep(nproc, 4)} \\
+    -t {c('SE', 'RI', 'A3SS', 'A5SS')}"
+  )
+
+  cmds[["DNN"]] <- glue(
+    "Darts_DNN predict \\
+    -i {rep(dir_out, 4)}/DARTS/BHT/{c('SE', 'RI', 'A3SS', 'A5SS')]}.darts_bht.flat.txt \\
+    -e {rep(dir_out, 4)}/DARTS/DNN/RBP_tpm.txt \\
+    -o {rep(dir_out, 4)}/DARTS/DNN/pred.{c('SE', 'RI', 'A3SS', 'A5SS')]}.txt \\
+    -t {c('SE', 'RI', 'A3SS', 'A5SS')]}"
+  )
+
+  cmds[["BHT info"]] <- glue(
+    "Darts_BHT bayes_infer \\
+    --rmats-count {rmats_count[c('SE', 'RI', 'A3SS', 'A5SS')]} \\
+    --od {rep(dir_out, 4)}/DARTS/BHT_DNN/ \\
+    --annot {rmats_anno[c('SE', 'RI', 'A3SS', 'A5SS')]} \\
+    --prior {rep(dir_out, 4)}/DARTS/DNN/pred.{c('SE', 'RI', 'A3SS', 'A5SS')}.txt \\
+    -t {c('SE', 'RI', 'A3SS', 'A5SS')} \\
+    -c {cstat} \\
+    --nthread {nproc}"
+  )
+
+  if (!is.null(conda_env) && !is.na(conda_env)) {
+    for (s in c("BHT flat", "DNN", "BHT info")) {
+      cmds[[s]] <- paste(
+        glue::glue("source {conda_path}/bin/activate {conda_env} &&"), cmds[[s]]
+      )
+    }
+  }
+  if (write_log) {
+    cmds[["BHT flat"]] <- paste(cmds[["BHT flat"]], glue("1>{rep(dir_out, 4)}/DARTS/BHT/_log.bht.{c('SE', 'RI', 'A3SS', 'A5SS')} 2>&1"))
+    cmds[["DNN"]] <- paste(cmds[["DNN"]], glue("1>{rep(dir_out, 4)}/DARTS/DNN/_log.dnn.{c('SE', 'RI', 'A3SS', 'A5SS')]} 2>&1"))
+    cmds[["BHT info"]] <- paste(cmds[["BHT info"]], glue("1>{rep(dir_out, 4)}/DARTS/BHT_DNN/_log.bht_dnn.{c('SE', 'RI', 'A3SS', 'A5SS')} 2>&1"))
+  }
+  if (parallel) {
+    if (np > 4) np <- 4
+    cmds[["BHT flat"]] <- myParallel2(cmds[["BHT flat"]], n = np)
+    cmds[["DNN"]] <- myParallel2(cmds[["DNN"]], n = np)
+    cmds[["BHT info"]] <- myParallel2(cmds[["BHT info"]], n = np)
+  }
+
+  cmds
+}
 
 
 
