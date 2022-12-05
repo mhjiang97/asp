@@ -418,6 +418,13 @@ cmd_asp <- function(
       write_log = write_log, ...
     )
   }
+  if ("jum" %in% tool) {
+    asp@cmds[["jum"]] <- jum(
+      dir_out = dir_out, sampletable = sampletable, basics = basics, nproc = nproc,
+      conda_path = conda_path["jum"], conda_env = conda_env["jum"], write_log = write_log,
+      ...
+    )
+  }
 
   asp
 }
@@ -480,7 +487,8 @@ run_asp <- function(asp, tool, run = T, read_results = T, parallel = T, block = 
     "bandits" = read_bandits,
     "suppa" = read_suppa,
     "psichomics" = read_psichomics,
-    "darts" = read_darts
+    "darts" = read_darts,
+    "jum" = read_jum
   )
   mydirs <- list(
     "rmats" = "",
@@ -491,7 +499,8 @@ run_asp <- function(asp, tool, run = T, read_results = T, parallel = T, block = 
     "bandits" = "",
     "suppa" = c("tpm", "psi", "ds"),
     "psichomics" = "",
-    "darts" = c("BHT", "DNN", "BHT_DNN")
+    "darts" = c("BHT", "DNN", "BHT_DNN"),
+    "jum" = ""
   )
 
   f <- vector("list", length = length(tool)) |> stats::setNames(tool)

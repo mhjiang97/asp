@@ -821,7 +821,7 @@ psichomics <- function(
 #' @name darts
 #' @aliases darts
 #' @param
-#' dir_out,basics,parallel,np,conda_path,conda_env,write_log
+#' dir_out,basics,parallel,tx2gene,nproc,conda_path,conda_env,write_log
 #'     These are obtained from \code{\linkS4class{ASP}} object.
 #' @param rmats_dir rMATS output directory.
 #' @param cstat Default is 0.05.
@@ -939,6 +939,128 @@ darts <- function(
     cmds[["BHT flat"]] <- myParallel2(cmds[["BHT flat"]], n = np)
     cmds[["DNN"]] <- myParallel2(cmds[["DNN"]], n = np)
     cmds[["BHT info"]] <- myParallel2(cmds[["BHT info"]], n = np)
+  }
+
+  cmds
+}
+
+#' JUM
+#' @description Generating commands of JUM workflow.
+#' @name jum
+#' @aliases jum
+#' @param
+#' dir_out,sampletable,basics,nproc,conda_path,conda_env,write_log
+#'     These are obtained from \code{\linkS4class{ASP}} object.
+#' @param REF An annoation of GenePred format.
+#' @param jum_dir The driectory containing JUM scripts.
+#' @param JuncThreshold Please consult JUM website.
+#' @param IRthreshold Please consult JUM website.
+#' @param Condition1_fileNum_threshold Default is half of the samples belonging to condition 1.
+#' @param Condition2_fileNum_threshold Default is half of the samples belonging to condition 2.
+#' @param ... nothing
+#' @importFrom glue glue
+#' @importFrom utils write.table
+#' @references \url{https://github.com/qqwang-berkeley/JUM}.
+#' @return A list containing JUM workflow.
+jum <- function(
+    dir_out, sampletable, basics, nproc, conda_path, conda_env, write_log,
+    REF, jum_dir, JuncThreshold = 3, IRthreshold = 5,
+    Condition1_fileNum_threshold = NA, Condition2_fileNum_threshold = NA, ...
+) {
+  dir_jum <- jum_dir
+  if (is.na(Condition1_fileNum_threshold)) Condition1_fileNum_threshold <- length(basics$samples_1) / 2
+  if (is.na(Condition2_fileNum_threshold)) Condition2_fileNum_threshold <- length(basics$samples_2) / 2
+
+  myCreatedir(glue::glue("{dir_out}/JUM/JUM_diff/"))
+
+  cmds <- list()
+
+  for (i in 1:nrow(sampletable)) {
+    file.symlink(
+      sampletable$files_bam[i],
+      glue::glue("{dir_out}/JUM/{sampletable$samples[i]}Aligned.out_sorted.bam")
+    )
+
+    file.symlink(
+      glue::glue("{dirname(sampletable$files_bam[i])}/SJ.out.tab"),
+      glue::glue("{dir_out}/JUM/{sampletable$samples[i]}SJ.out.tab")
+    )
+
+    cmd[[glue::glue("converting bam to sam, {i}")]] <- glue::glue(
+      "samtools view \\
+      -h \\
+      -o {dir_out}/JUM/{sampletable$samples[i]}Aligned.out.sam \\
+      {dir_out}/JUM/{sampletable$samples[i]}Aligned.out_sorted.bam"
+    )
+  }
+
+
+  cmds[["JUM A"]] <- glue::glue(
+    "cd {dir_out}/JUM/ && \\
+    bash {dir_jum}/JUM_A.sh \\
+    --Folder {dir_jum} \\
+    --JuncThreshold {JuncThreshold} \\
+    --Condition1_fileNum_threshold {Condition1_fileNum_threshold} \\
+    --Condition2_fileNum_threshold {Condition2_fileNum_threshold} \\
+    --IRthreshold {IRthreshold} \\
+    --Readlength {basics$read_length_most} \\
+    --Thread {max(floor(nproc/nrow(sampletable)), 1)} \\
+    --Condition1SampleName {paste(basics$samples_1, collapse = ',')} \\
+    --Condition2SampleName {paste(basics$samples_2, collapse = ',')}"
+  )
+
+  ed <- data.frame(
+    row.names = sampleTable$samples, condition = sampleTable$conditions
+  )
+  write.table(ed, glue::glue("{dir_out}/JUM/JUM_diff/experiment_design.txt"), sep = "\t", quote = F)
+
+  cmds[["JUM R"]] <- glue::glue(
+    "cd {dir_out}/JUM/JUM_diff/ && \\
+    Rscript {dir_jum}/R_script_JUM.R experiment_design.txt"
+  )
+
+  cmds[["JUM B"]] <- glue::glue(
+    "cd {dir_out}/JUM/JUM_diff/ && \\
+    bash {dir_jum}/JUM_B.sh \\
+    --Folder {dir_jum} \\
+    --Test adjusted_pvalue \\
+    --Cutoff 1 \\
+    --TotalFileNum {nrow(sampletable)} \\
+    --Condition1_fileNum_threshold {Condition1_fileNum_threshold} \\
+    --Condition2_fileNum_threshold {Condition2_fileNum_threshold} \\
+    --Condition1SampleName {paste(basics$samples_1, collapse = ',')} \\
+    --Condition2SampleName {paste(basics$samples_2, collapse = ',')}"
+  )
+
+  cmds[["JUM C"]] <- glue::glue(
+    "cd {dir_out}/JUM/JUM_diff/FINAL_JUM_OUTPUT_adjusted_pvalue_1/ && \\
+    bash {dir_jum}/JUM_C.sh \\
+    --Folder {dir_jum} \\
+    --Test adjusted_pvalue \\
+    --Cutoff 1 \\
+    --TotalCondition1FileNum {length(basics$samples_1)} \\
+    --TotalCondition2FileNum {length(basics$samples_2)} \\
+    --REF {REF}"
+  )
+
+  if (!is.null(conda_env) && !is.na(conda_env)) {
+    for (
+      s in c(
+        glue::glue("converting bam to sam, {1:nrow(sampletable)}"),
+        "JUM A", "JUM R", "JUM B", "JUM C"
+      )
+    ) {
+      cmds[[s]] <- paste(
+        glue::glue("source {conda_path}/bin/activate {conda_env} &&"), cmds[[s]]
+      )
+    }
+  }
+
+  if (write_log) {
+    cmds[["JUM A"]] <- paste(cmds[["JUM A"]], glue::glue("1>{dir_out}/JUM/_log.a 2>&1"))
+    cmds[["JUM B"]] <- paste(cmds[["JUM B"]], glue::glue("1>{dir_out}/JUM/_log.b 2>&1"))
+    cmds[["JUM C"]] <- paste(cmds[["JUM C"]], glue::glue("1>{dir_out}/JUM/_log.c 2>&1"))
+    cmds[["JUM R"]] <- paste(cmds[["JUM R"]], glue::glue("1>{dir_out}/JUM/_log.r 2>&1"))
   }
 
   cmds

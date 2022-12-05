@@ -455,7 +455,7 @@ read_psichomics <- function(asp) {
 }
 
 #' @importFrom glue glue
-#' @importFrom dplyr rename mutate case_when left_join select bind_rows
+#' @importFrom dplyr rename mutate bind_rows
 #' @importFrom openxlsx read.xlsx
 read_darts <- function(asp) {
   file <- glue::glue("{asp@dir_out}/DARTS/BHT/Darts_BHT.results.xlsx")
@@ -487,6 +487,46 @@ read_darts <- function(asp) {
   darts <- dplyr::bind_rows(list_darts)
 
   darts
+}
+
+#' @importFrom glue glue
+#' @importFrom dplyr rename mutate case_when bind_rows
+read_jum <- function(asp) {
+  dir <- glue::glue("{asp@dir_out}/JUM/JUM_diff/FINAL_JUM_OUTPUT_adjusted_pvalue_1/")
+  types_all <- c("cassette_exon", "MXE", "A3SS", "A5SS", "intron_retention", "composite")
+  patterns <- glue::glue("{types_all}.*_final_simplified.txt") |>
+    as.character() |>
+    setNames(types_all)
+  files_read <- findReadFiles(
+    types_all = types_all, types_event = event_type, dir = dir, patterns = patterns
+  )
+
+  list_jum <- vector("list", length(files_read)) |>
+    setNames(names(files_read))
+  for (e in names(list_jum)) {
+    f <- files_read[e]
+    list_jum[[e]] <- f |>
+      myVroom(na_append = c("NaN", "Inf", "-Inf")) |>
+      dplyr::mutate(as_type = e) |>
+      dplyr::mutate(
+        as_type = case_when(
+          as_type == "cassette_exon" ~ "SE",
+          as_type == "intron_retention" ~ "RI",
+          as_type == "composite" ~ "OTHER",
+          as_type == "MXE" ~ "MXE",
+          as_type == "A5SS" ~ "A5SS",
+          as_type == "A3SS" ~ "A3SS"
+        )
+      ) |>
+      dplyr::rename(
+        padj = qvalue, p = pvalue, gene_symbol = Gene,
+        dpsi = dplyr::all_of(glue::glue("deltaPSI_{asp@basics$condition_1}-{asp@basics$condition_2}"))
+      )
+  }
+
+  jum <- dplyr::bind_rows(list_jum)
+
+  jum
 }
 
 

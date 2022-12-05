@@ -19,7 +19,7 @@ darts(
 )
 }
 \arguments{
-\item{dir_out, basics, parallel, np, conda_path, conda_env, write_log}{These are obtained from \code{\linkS4class{ASP}} object.}
+\item{dir_out, basics, parallel, tx2gene, nproc, conda_path, conda_env, write_log}{These are obtained from \code{\linkS4class{ASP}} object.}
 
 \item{rmats_dir}{rMATS output directory.}
 
