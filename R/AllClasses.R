@@ -2,7 +2,7 @@
 #' @name ASP-class
 #' @aliases ASP-class
 #' @description  All information stored in ASP object.
-#'    You can use \code{creatASP} to create an ASP object.
+#'    You can use \code{create_asp} to create an ASP object.
 #'    In this package, most of the functions will use
 #'    ASP object as input, and return a modified ASP as well.
 #' @slot sampletable data.frame. An experiment design table and
